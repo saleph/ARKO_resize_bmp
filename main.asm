@@ -79,7 +79,7 @@ Loop:	%bodyMacroName ()
   	la   	$a0, fout		# output file name
   	li   	$a1, 1			# Open for write
   	syscall			
-  	sw 	$v0, in_file_desc	# save the file descriptor 
+  	sw 	$v0, out_file_desc	# save the file descriptor 
 	.end_macro
 	
 	##########################################

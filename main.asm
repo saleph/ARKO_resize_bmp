@@ -11,7 +11,7 @@
 		.data
 in_file_desc:	.space	4
 out_file_desc:	.space	4
-fin:		.asciiz	"/home/tgalecki/Projekty/bmpresizeASM/image.bmp"
+fin:		.asciiz	"/home/tgalecki/Projekty/bmpresizeASM/image2.bmp"
 fout:		.asciiz	"/home/tgalecki/Projekty/bmpresizeASM/image_scaled.bmp"
 		.align 	4
 in_img:		.space 	2		# for buffer shift

@@ -144,6 +144,39 @@ Loop:	%bodyMacroName ()
 	add	OUTHEIGHT, $zero, $v0	# copy height
 	.end_macro
 	
+	##################### FIXED POINT ARITHMETIC #####################
+	.macro fixedFromInt (%source)
+	sll	%source, %source, 16
+	.end_macro
+	
+	##########################################
+	.macro fixedToInt (%source)
+	srl	%source, %source, 16
+	.end_macro
+	
+	##########################################
+	.macro fixedAdd (%dest, %first, %second)
+	addu	%dest, %first, %second
+	.end_macro
+	
+	##########################################
+	.macro fixedMult (%dest, %first, %second)
+	# HI: | significant | LO: | fraction |, do mult = (HI << 16) | (LO >> 16)
+	multu	%first, %second
+	mflo	%dest
+	srl	%dest, %dest, 16	# 16 bits for fraction
+	mfhi	$a0
+	sll	$a0, $a0, 16		# 16 bits for significant
+	or	%dest, %dest, $a0	
+	.end_macro
+	
+	##########################################
+	.macro fixedDiv (%dest, %first, %second)
+	divu	%dest, %second
+	mflo	%dest
+	sll	%dest, %first, 16	# expand first arg
+	.end_macro
+	
 	##################### IMAGE COMPUTING MACROS #####################
 	.macro multBy3 (%reg)
 	move	$a0, %reg
@@ -171,7 +204,33 @@ Loop:	%bodyMacroName ()
 	sll	OUTROWSIZE, $a0, 2	# *4
 	.end_macro
 ########################################## MAIN PROGRAM ##############################################################
+debugStr("Fixed point arithmetic debug")
+	.macro dload (%first, %second)
+	add	$a0, $zero, %first
+	move	$t0, $a0
+	add	$a0, $zero, %second
+	move	$t1, $a0
+	.end_macro
+	
+	dload(98304, 917635)
+	fixedMult($t2, $t0, $t1)
+	fixedAdd($t3, $t0, $t1)
+	fixedDiv($t4, $t0, $t1)
+	debug("1.5 x 14.002 = ", $t2)
+	debug("1.5 + 14.002 = ", $t3)
+	debug("1.5 / 14.002 = ", $t4)
+	
+	dload(65536, 65536)
+	fixedMult($t2, $t0, $t1)
+	fixedAdd($t3, $t0, $t1)
+	fixedDiv($t4, $t0, $t1)
+	debug("1 x 1 = ", $t2)
+	debug("1 + 1 = ", $t3)
+	debug("1 / 1 = ", $t4)
+	
+	
 
+debugStr("\n")
 ##################### FILE & HEADER LOAD ###############################
 	openInputImg()
 	openOutputImg()
@@ -202,13 +261,13 @@ debugStr(">> INPUT HEADER PARSING")
 	computeInputRowSize()
 	debug("Computed row size: ", INROWSIZE)
 	
-debugStr("<< HEADER PARSING")
+debugStr("<< INPUT HEADER PARSING")
 debugStr("")
 	
 ##################### OUTPUT HEADER PREPARATION #####################
 debugStr(">> OUTPUT HEADER PREPARATION")
 	printStr("Enter new image size:\n")
-	readNewImgSize()
+	#readNewImgSize()
 	computeOutputRowSize()
 	
 	lw	$t0, OUTWIDTH
@@ -216,18 +275,18 @@ debugStr(">> OUTPUT HEADER PREPARATION")
 	debug("Read output height: ", OUTHEIGHT)
 	
 	lhu	$t0, inheader
-	sh	$t0, outheader 		# store first halfword of 54 bytes of header
+	sh	$t0, outheader 			# store first halfword of 54 bytes of header
 	la	$t0, inheader + 2
 	la	$t1, outheader + 2
 	
-	.macro copy()			# macro for dummy copy of input img header
+	.macro copy()				# macro for dummy copy of input img header
 	lw	$a0, ($t0)
 	sw	$a0, ($t1)
 	addiu	$t0, $t0, 4
 	addiu	$t1, $t1, 4
 	.end_macro
 	
-	forN ($t2, 13, copy)		# copy 13*4=52 bytes of header to outheader
+	forN ($t2, 13, copy)			# copy 13*4=52 bytes of header to outheader
 	
 	move	$t0, OUTROWSIZE
 	multu	$t0, OUTHEIGHT
@@ -235,7 +294,7 @@ debugStr(">> OUTPUT HEADER PREPARATION")
 	debug("New writed color table size: ", $t0)
 	sw	$t0, outheader + 0x22
 	
-	addiu	$t0, $t0, 54		# add header length
+	addiu	$t0, $t0, 54			# add header length
 	debug("New writed bmp size: ", $t0)
 	sw	$t0, outheader + 0x2
 	
@@ -246,11 +305,21 @@ debugStr(">> OUTPUT HEADER PREPARATION")
 	debug("New writed height: ", OUTHEIGHT)
 	sw	OUTHEIGHT, outheader + 0x16
 	
+	storeToImg(outheader, 54)		# save to file parsed header
 	
 debugStr("<< OUTPUT HEADER PREPARATION")
 debugStr("")
-	
-##################### EPILOG #####################
+
+########################################## IMAGE PROCESSING ##########################################
+debugStr(">>>>> IMAGE PROCESSING")
+
+
+
+
+debugStr("<<<<< IMAGE PROCESSING")
+debugStr("")
+
+##################### EPILOGUE #####################
 epilogue:
 	closeInputImg()
 	closeOutputImg()

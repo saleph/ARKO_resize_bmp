@@ -64,11 +64,11 @@ str:	.asciiz %str
 	.end_macro
 	
 	##########################################
-	.macro forN (%regIterator, %from, %bodyMacroName)
-	add 	%regIterator, $zero, %from
+	.macro forN (%times, %bodyMacroName)
+	add 	$v0, $zero, %times
 Loop:	%bodyMacroName ()
-	add 	%regIterator, %regIterator, -1
-	bnez 	%regIterator, Loop
+	add 	$v0, $v0, -1
+	bnez 	$v0, Loop
 	.end_macro
 	
 	##########################################
@@ -151,12 +151,17 @@ Loop:	%bodyMacroName ()
 	
 	##########################################
 	.macro fixedToInt (%source)
-	srl	%source, %source, 16
+	sra	%source, %source, 16
 	.end_macro
 	
 	##########################################
 	.macro fixedAdd (%dest, %first, %second)
 	addu	%dest, %first, %second
+	.end_macro
+	
+	##########################################
+	.macro fixedSub (%dest, %first, %second)
+	subu	%dest, %first, %second
 	.end_macro
 	
 	##########################################
@@ -176,18 +181,6 @@ Loop:	%bodyMacroName ()
 	addu	$a0, $zero, %second
 	sra	$a0, $a0, 8
 	div	%dest, $a0
-	mflo	%dest
-	.end_macro
-	
-	##########################################
-	.macro fixedInversion (%dest, %number)
-	# inversion with maximum precision
-	li	%dest, 65536		# 1 in fixed point notation
-	sll	%dest, %dest, 14	# now dest is 0x80000000 
-	addu	$a0, $zero, %number
-	#sra	$a0, $a0, 2
-	div	%dest, $a0
-	sll	%dest, %dest, 2
 	mflo	%dest
 	.end_macro
 	
@@ -274,7 +267,7 @@ debugStr(">> OUTPUT HEADER PREPARATION")
 	addiu	$t1, $t1, 4
 	.end_macro
 	
-	forN ($t2, 13, copy)			# copy 13*4=52 bytes of header to outheader
+	forN (13, copy)			# copy 13*4=52 bytes of header to outheader
 	
 	move	$t0, OUTROWSIZE
 	multu	$t0, OUTHEIGHT
@@ -335,9 +328,11 @@ debugStr("Fixed point arithmetic debug")
 	dload(1783235, 178258)
 	fixedMult($t2, $t0, $t1)
 	fixedAdd($t3, $t0, $t1)
+	fixedSub($t5, $t0, $t1)
 	fixedDiv($t4, $t0, $t1)
 	debug("27.21 x 2.72 = ", $t2)
 	debug("27.21 + 2.72 = ", $t3)
+	debug("27.21 - 2.72 = ", $t5)
 	debug("27.21 / 2.72 = ", $t4)
 	
 	dload(983040, 196608)
@@ -352,18 +347,14 @@ debugStr("Fixed point arithmetic debug")
 	fixedMult($t2, $t0, $t1)
 	fixedAdd($t3, $t0, $t1)
 	fixedDiv($t4, $t0, $t1)
-	fixedInversion($t5, $t1)
 	debug("1 x 0.0005 = ", $t2)
 	debug("1 + 0.0005 = ", $t3)
 	debug("1 / 0.0005 = ", $t4)
-	debug("precise 1/0.0005 = ", $t5)
 	
 	
 	dload(65536, 182780)
 	fixedDiv($t4, $t0, $t1)
-	fixedInversion($t5, $t1)
 	debug("1 / 2.789 = ", $t4)
-	debug("precise 1/2.789 = ", $t5)
 	
 
 debugStr("\n")

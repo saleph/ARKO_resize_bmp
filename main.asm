@@ -172,9 +172,23 @@ Loop:	%bodyMacroName ()
 	
 	##########################################
 	.macro fixedDiv (%dest, %first, %second)
-	divu	%dest, %second
+	sll	%dest, %first, 8	# expand first arg
+	addu	$a0, $zero, %second
+	sra	$a0, $a0, 8
+	div	%dest, $a0
 	mflo	%dest
-	sll	%dest, %first, 16	# expand first arg
+	.end_macro
+	
+	##########################################
+	.macro fixedInversion (%dest, %number)
+	# inversion with maximum precision
+	li	%dest, 65536		# 1 in fixed point notation
+	sll	%dest, %dest, 14	# now dest is 0x80000000 
+	addu	$a0, $zero, %number
+	#sra	$a0, $a0, 2
+	div	%dest, $a0
+	sll	%dest, %dest, 2
+	mflo	%dest
 	.end_macro
 	
 	##################### IMAGE COMPUTING MACROS #####################
@@ -204,33 +218,7 @@ Loop:	%bodyMacroName ()
 	sll	OUTROWSIZE, $a0, 2	# *4
 	.end_macro
 ########################################## MAIN PROGRAM ##############################################################
-debugStr("Fixed point arithmetic debug")
-	.macro dload (%first, %second)
-	add	$a0, $zero, %first
-	move	$t0, $a0
-	add	$a0, $zero, %second
-	move	$t1, $a0
-	.end_macro
-	
-	dload(98304, 917635)
-	fixedMult($t2, $t0, $t1)
-	fixedAdd($t3, $t0, $t1)
-	fixedDiv($t4, $t0, $t1)
-	debug("1.5 x 14.002 = ", $t2)
-	debug("1.5 + 14.002 = ", $t3)
-	debug("1.5 / 14.002 = ", $t4)
-	
-	dload(65536, 65536)
-	fixedMult($t2, $t0, $t1)
-	fixedAdd($t3, $t0, $t1)
-	fixedDiv($t4, $t0, $t1)
-	debug("1 x 1 = ", $t2)
-	debug("1 + 1 = ", $t3)
-	debug("1 / 1 = ", $t4)
-	
-	
 
-debugStr("\n")
 ##################### FILE & HEADER LOAD ###############################
 	openInputImg()
 	openOutputImg()
@@ -320,6 +308,66 @@ debugStr("<<<<< IMAGE PROCESSING")
 debugStr("")
 
 ##################### EPILOGUE #####################
+debugStr("Fixed point arithmetic debug")
+	.macro dload (%first, %second)
+	add	$a0, $zero, %first
+	move	$t0, $a0
+	add	$a0, $zero, %second
+	move	$t1, $a0
+	.end_macro
+	
+	dload(98304, 917635)
+	fixedMult($t2, $t0, $t1)
+	fixedAdd($t3, $t0, $t1)
+	fixedDiv($t4, $t0, $t1)
+	debug("1.5 x 14.002 = ", $t2)
+	debug("1.5 + 14.002 = ", $t3)
+	debug("1.5 / 14.002 = ", $t4)
+	
+	dload(65536, 65536)
+	fixedMult($t2, $t0, $t1)
+	fixedAdd($t3, $t0, $t1)
+	fixedDiv($t4, $t0, $t1)
+	debug("1 x 1 = ", $t2)
+	debug("1 + 1 = ", $t3)
+	debug("1 / 1 = ", $t4)
+	
+	dload(1783235, 178258)
+	fixedMult($t2, $t0, $t1)
+	fixedAdd($t3, $t0, $t1)
+	fixedDiv($t4, $t0, $t1)
+	debug("27.21 x 2.72 = ", $t2)
+	debug("27.21 + 2.72 = ", $t3)
+	debug("27.21 / 2.72 = ", $t4)
+	
+	dload(983040, 196608)
+	fixedMult($t2, $t0, $t1)
+	fixedAdd($t3, $t0, $t1)
+	fixedDiv($t4, $t0, $t1)
+	debug("15 x 3 = ", $t2)
+	debug("15 + 3 = ", $t3)
+	debug("15 / 3 = ", $t4)
+	
+	dload(65536, 33)
+	fixedMult($t2, $t0, $t1)
+	fixedAdd($t3, $t0, $t1)
+	fixedDiv($t4, $t0, $t1)
+	fixedInversion($t5, $t1)
+	debug("1 x 0.0005 = ", $t2)
+	debug("1 + 0.0005 = ", $t3)
+	debug("1 / 0.0005 = ", $t4)
+	debug("precise 1/0.0005 = ", $t5)
+	
+	
+	dload(65536, 182780)
+	fixedDiv($t4, $t0, $t1)
+	fixedInversion($t5, $t1)
+	debug("1 / 2.789 = ", $t4)
+	debug("precise 1/2.789 = ", $t5)
+	
+
+debugStr("\n")
+
 epilogue:
 	closeInputImg()
 	closeOutputImg()

@@ -18,8 +18,8 @@ fout:		.asciiz	"image_scaled.bmp"
 		.align 	4
 inimg:		.space 	2		# for buffer shift
 inheader:	.space 	BUFFER_SIZE	# 1,6 MB for input
-
-outimg:	.space 	2		# for header shift
+		.align	4
+outimg:		.space 	2		# for header shift
 outheader:	.space 	BUFFER_SIZE	# 1,6 MB for output
 
         .text
@@ -64,11 +64,20 @@ str:	.asciiz %str
 	.end_macro
 	
 	##########################################
-	.macro for (%regIterator, %from, %bodyMacroName)
+	.macro forN (%regIterator, %from, %bodyMacroName)
 	add 	%regIterator, $zero, %from
 Loop:	%bodyMacroName ()
 	add 	%regIterator, %regIterator, -1
 	bnez 	%regIterator, Loop
+	.end_macro
+	
+	##########################################
+	.macro for (%regIterator, %from, %to, %bodyMacroName)
+	add %regIterator, $zero, %from
+	Loop:
+	%bodyMacroName ()
+	add %regIterator, %regIterator, 1
+	ble %regIterator, %to, Loop
 	.end_macro
 	
 	##########################################
@@ -198,14 +207,45 @@ debugStr("")
 	
 ##################### OUTPUT HEADER PREPARATION #####################
 debugStr(">> OUTPUT HEADER PREPARATION")
-	#printStr("Enter new image size:\n")
-	#readNewImgSize()
-	li	B_OUTWIDTH, 121
-	li	OUTHEIGHT, 61
-	debug("Read output width: ", B_OUTWIDTH)
+	printStr("Enter new image size:\n")
+	readNewImgSize()
+	computeOutputRowSize()
+	
+	lw	$t0, OUTWIDTH
+	debug("Read output width: ", $t0)
 	debug("Read output height: ", OUTHEIGHT)
 	
-	storeToImg(inimg, 54)
+	lhu	$t0, inheader
+	sh	$t0, outheader 		# store first halfword of 54 bytes of header
+	la	$t0, inheader + 2
+	la	$t1, outheader + 2
+	
+	.macro copy()			# macro for dummy copy of input img header
+	lw	$a0, ($t0)
+	sw	$a0, ($t1)
+	addiu	$t0, $t0, 4
+	addiu	$t1, $t1, 4
+	.end_macro
+	
+	forN ($t2, 13, copy)		# copy 13*4=52 bytes of header to outheader
+	
+	move	$t0, OUTROWSIZE
+	multu	$t0, OUTHEIGHT
+	mflo	$t0
+	debug("New writed color table size: ", $t0)
+	sw	$t0, outheader + 0x22
+	
+	addiu	$t0, $t0, 54		# add header length
+	debug("New writed bmp size: ", $t0)
+	sw	$t0, outheader + 0x2
+	
+	lw	$t0, OUTWIDTH
+	debug("New writed width: ", $t0)
+	sw	$t0, outheader + 0x12
+	
+	debug("New writed height: ", OUTHEIGHT)
+	sw	OUTHEIGHT, outheader + 0x16
+	
 	
 debugStr("<< OUTPUT HEADER PREPARATION")
 debugStr("")

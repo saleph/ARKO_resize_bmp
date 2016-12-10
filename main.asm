@@ -378,14 +378,55 @@ destB_devX1:		.space	4
 sBGR_devX2:		.space	4		
 fx_devY1:		.space	4		
 fy_devY2:		.space	4
+
+ps0_:	.space 4
+pd0_:	.space 4
+psstep_:	.space 4
+pdstep_:	.space 4
+sx1_:	.space 4
+sy1_:	.space 4
+sx2_:	.space 4
+sy2_:	.space 4
+x_:	.space 4
+y_:	.space 4
+i_:	.space 4
+j_:	.space 4
+destwidth_:	.space 4
+destheight_:	.space 4
+destR_:	.space 4
+destG_:	.space 4
+destB_:	.space 4
+sRGB_:	.space 4
+fx_:	.space 4
+fy_:	.space 4
 	
+fiy_:	.space 4
+dyf_:	.space 4
+fxstep_:	.space 4
+fystep_:	.space 4
+dx_:	.space 4
+dy_:	.space 4
+color_:	.space 4
+pdy_:	.space 4
+pdx_:	.space 4
+psi_:	.space 4
+psj_:	.space 4
+AP_:	.space 4
+istart_:	.space 4
+iend_:	.space 4
+jstart_:	.space 4
+jend_:	.space 4
+devX1_:	.space 4
+devX2_:	.space 4
+devY1_:	.space 4
+devY2_:	.space 4
+
+
 	.text
-	.macro setFirst(%first, %second, %buffer)
-	lw	$v0, %buffer
-	beq	$v0, %second, no_swap_needed
-	sw	%second, %buffer
+	.macro setFirst(%first, %second, %firstaddr, %secondaddr)
+	lw	$v0, %firstaddr
+	sw	%second, %secondaddr
 	move	%first, $v0
-no_swap_needed:
 	.end_macro
 	
 	.macro	ps0_from_ps0_fiy()
@@ -504,6 +545,124 @@ no_swap_needed:
 	setFirst(devY2, fy, fy_devY2)
 	.end_macro
 	
+	
+	################################
+	.macro	ps0_from_ps0_fiy()
+	setFirst(ps0, fiy, ps0_, fiy_)
+	.end_macro
+	.macro	pd0_from_pd0_dyf()	
+	setFirst(pd0, dyf, pd0_, dyf_)
+	.end_macro
+	.macro	psstep_from_psstep_fxstep()	
+	setFirst(psstep, fxstep, psstep_, fxstep_)
+	.end_macro
+	.macro	pdstep_from_pdstep_fystep()	
+	setFirst(pdstep, fystep, pdstep_, fystep_)
+	.end_macro
+	.macro	sx1_from_sx1_dx()	
+	setFirst(sx1, dx, sx1_, dx_)
+	.end_macro
+	.macro	sy1_from_sy1_dy()	
+	setFirst(sy1, dy, sy1_, dy_)
+	.end_macro
+	.macro	sx2_from_sx2_color()	
+	setFirst(sx2, color, sx2_, color_)
+	.end_macro
+	.macro	sy2_from_sy2_pdy()	
+	setFirst(sy2, pdy, sy2_, pdy_)
+	.end_macro
+	.macro	x_from_x_pdx()	setFirst(x, pdx, x_, pdx_)
+	.end_macro
+	.macro	y_from_y_psi()	setFirst(y, psi, y_, psi_)
+	.end_macro
+	.macro	i_from_i_psj()	setFirst(i, psj, i_, psj_)
+	.end_macro
+	.macro	j_from_j_AP()	setFirst(j, AP, j_, AP_)
+	.end_macro
+	.macro	destwidth_from_destwidth_istart()	
+	setFirst(destwidth, istart, destwidth_, istart_)
+	.end_macro
+	.macro	destheight_from_destheight_iend()	
+	setFirst(destheight, iend, destheight_, iend_)
+	.end_macro
+	.macro	destR_from_destR_jstart()	
+	setFirst(destR, jstart, destR_, jstart_)
+	.end_macro
+	.macro	destG_from_destG_jend()	setFirst(destG, jend, destG_, jend_)
+	.end_macro
+	.macro	destB_from_destB_devX1()	
+	setFirst(destB, devX1, destB_, devX1_)
+	.end_macro
+	.macro	sRGB_from_sRGB_devX2()	
+	setFirst(sRGB, devX2, sRGB_, devX2_)
+	.end_macro
+	.macro	fx_from_fx_devY1()	
+	setFirst(fx, devY1, fx_, devY1_)
+	.end_macro
+	.macro	fy_from_fy_devY2()	
+	setFirst(fy, devY2, fy_, devY2_)
+	.end_macro
+			
+	.macro	fiy_from_ps0_fiy()	
+	setFirst(fiy, ps0, fiy_, ps0_)
+	.end_macro
+	.macro	dyf_from_pd0_dyf()	
+	setFirst(dyf, pd0, dyf_, pd0_)
+	.end_macro
+	.macro	fxstep_from_psstep_fxstep()	
+	setFirst(fxstep, psstep, fxstep_, psstep_)
+	.end_macro
+	.macro	fystep_from_pdstep_fystep()	
+	setFirst(fystep, pdstep, fystep_, pdstep_)
+	.end_macro
+	.macro	dx_from_sx1_dx()	
+	setFirst(dx, sx1, dx_, sx1_)
+	.end_macro
+	.macro	dy_from_sy1_dy()	
+	setFirst(dy, sy1, dy_, sy1_)
+	.end_macro
+	.macro	color_from_sx2_color()	
+	setFirst(color, sx2, color_, sx2_)
+	.end_macro
+	.macro	pdy_from_sy2_pdy()	
+	setFirst(pdy, sy2, pdy_, sy2_)
+	.end_macro
+	.macro	pdx_from_x_pdx()	
+	setFirst(pdx, x, pdx_, x_)
+	.end_macro
+	.macro	psi_from_y_psi()	
+	setFirst(psi, y, psi_, y_)
+	.end_macro
+	.macro	psj_from_i_psj()	
+	setFirst(psj, i, psj_, i_)
+	.end_macro
+	.macro	AP_from_j_AP()	
+	setFirst(AP, j, AP_, j_)
+	.end_macro
+	.macro	istart_from_destwidth_istart()	
+	setFirst(istart, destwidth, istart_, destwidth_)
+	.end_macro
+	.macro	iend_from_destheight_iend()	
+	setFirst(iend, destheight, iend_, destheight_)
+	.end_macro
+	.macro	jstart_from_destR_jstart()	
+	setFirst(jstart, destR, jstart_, destR_)
+	.end_macro
+	.macro	jend_from_destG_jend()	setFirst(jend, destG, jend_, destG_)
+	.end_macro
+	.macro	devX1_from_destB_devX1()	
+	setFirst(devX1, destB, devX1_, destB_)
+	.end_macro
+	.macro	devX2_from_sRGB_devX2()	
+	setFirst(devX2, sRGB, devX2_, sRGB_)
+	.end_macro
+	.macro	devY1_from_fx_devY1()	
+	setFirst(devY1, fx, devY1_, fx_)
+	.end_macro
+	.macro	devY2_from_fy_devY2()	
+	setFirst(devY2, fy, devY2_, fy_)
+	.end_macro
+	
 ########################################## IMAGE PROCESSING ##########################################
 debugStr(">>>>> IMAGE PROCESSING")
 	
@@ -594,12 +753,18 @@ horizontal_dest:
 	
 		istart_from_destwidth_istart()
 		iend_from_destheight_iend()
-	fixedTrunc (istart, sx1)
-	fixedTrunc (iend, sx2)
+	#fixedTrunc (istart, sx1)
+	move	istart, sx1
+	fixedToInt (istart)
+	#fixedTrunc (iend, sx2)
+	move	iend, sx2
+	fixedToInt (iend)
 	li	$v0, 1
 	fixedFromInt ($v0)
 		devX1_from_destB_devX1()
+	fixedFromInt (istart)
 	fixedAdd (devX1, istart, $v0)
+	fixedToInt (istart)
 	fixedSub (devX1, devX1, sx1)
 	li	$v0, 1
 	fixedFromInt ($v0)
@@ -615,9 +780,12 @@ horizontal_dest:
 		psj_from_i_psj()
 		jstart_from_destR_jstart()
 		psstep_from_psstep_fxstep()
-	fixedMult (psj, jstart, psstep)
+	#fixedMult (psj, jstart, psstep)
+	multu	jstart, psstep
+	mflo	psj
 		ps0_from_ps0_fiy()
-	fixedSub (psj, ps0, psj)
+	#fixedSub (psj, ps0, psj)
+	subu	psj, ps0, psj
 		dy_from_sy1_dy()
 		devY1_from_fx_devY1()
 	move	dy, devY1
@@ -636,12 +804,15 @@ if1:
 		fiy_from_ps0_fiy()
 	fixedMult (dyf, dy, fiy)
 	li	$v0, 3
-	fixedFromInt ($v0)
+	#fixedFromInt ($v0)
 		psi_from_y_psi()
 		istart_from_destwidth_istart()
-	fixedMult (psi, istart, $v0)
-		psi_from_y_psi()
-	fixedAdd (psi, psi, psj)
+	#fixedMult (psi, istart, $v0)
+	multu	istart, $v0
+	mflo	psi
+	################################	
+	#fixedAdd (psi, psi, psj)
+	addu	psi, psi, psj
 		dx_from_sx1_dx()
 		devX1_from_destB_devX1()
 	move	dx, devX1
@@ -660,7 +831,7 @@ if2:
 	fixedMult (AP, dx, dyf)		# compute area factor
 	fixedMult (AP, AP, fix)
 		psi_from_y_psi()
-	fixedToInt (psi)		# switch pointer to int from fixed
+	#fixedToInt (psi)		# switch pointer to int from fixed
 	
 	debug("Load adress: ", psi)
 	lbu	$v0, (psi)		# load Blue
@@ -682,7 +853,7 @@ if2:
 	fixedAdd (destR, destR, $v0)
 	
 	addiu	psi, psi, 3
-	fixedFromInt (psi)
+	#fixedFromInt (psi)
 	
 	li	$v0, 1
 	fixedFromInt ($v0)
@@ -696,7 +867,8 @@ if2:
 # vertical source
 		psstep_from_psstep_fxstep()
 		psj_from_i_psj()
-	fixedSub (psj, psj, psstep)
+	#fixedSub (psj, psj, psstep)
+	subu	psj, psj, psstep
 	li	$v0, 1
 	fixedFromInt ($v0)
 		dy_from_sy1_dy()
@@ -732,7 +904,8 @@ if2:
 		pdy_from_sy2_pdy()
 		pdstep_from_pdstep_fystep()
 	
-	fixedAdd (pdy, pdy, pdstep)
+	#fixedAdd (pdy, pdy, pdstep)
+	add	pdy, pdy, pdstep
 		y_from_y_psi()
 		destheight_from_destheight_iend()
 	ble	y, destheight, vertical_dest

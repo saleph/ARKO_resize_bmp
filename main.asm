@@ -184,10 +184,17 @@ Loop:	%bodyMacroName ()
 	mflo	%dest
 	.end_macro
 	
+	##########################################
 	.macro fixedInversion (%dest, %source)
 	li	$v0, 1
 	fixedFromInt ($v0)
 	fixedDiv (%dest, $v0, %source)
+	.end_macro
+	
+	##########################################
+	.macro fixedTrunc (%dest, %source)
+	sra	%dest, %source, 16
+	sll	%dest, %dest, 16
 	.end_macro
 	
 	##################### IMAGE COMPUTING MACROS #####################
@@ -537,6 +544,55 @@ debugStr(">>>>> IMAGE PROCESSING")
 	li	$v0, 65529
 	fixedMult (fxstep, fx, $v0) 		# multiply fx by 0.9999
 	fixedMult (fystep, fy, $v0)
+	
+	move	pdy, pd0
+	
+	
+	############################ LOOPS #########################
+	li	y, 0
+	#fixedFromInt (y)
+vertical_dest:
+	fixedMult (sy1, fy, y)
+	fixedAdd (sy2, sy1, fystep)
+	fixedTrunc (jstart, sy1)
+	fixedTrunc (jend, sy2)
+	li	$v0, 1
+	fixedFromInt ($v0)
+	fixedAdd (devY1, jstart, $v0)
+	fixedSub (devY1, devY1, sy1)
+	li	$v0, 1
+	fixedFromInt ($v0)
+	fixedAdd (devY2, jend, $v0)
+	fixedSub (devY2, devY2, sy2)
+	move	pdx, pdy
+
+	li	x, 0
+	#fixedFromInt (x)
+horizontal_dest:
+	fixedMult (sx1, fx, x)
+	fixedAdd (sx2, sx1, fxstep)
+	fixedTrunc (istart, sx1)
+	fixedTrunc (iend, sx2)
+	li	$v0, 1
+	fixedFromInt ($v0)
+	fixedAdd (devX1, istart, $v0)
+	fixedSub (devX1, devX1, sx1)
+	li	$v0, 1
+	fixedFromInt ($v0)
+	fixedAdd (devX2, iend, $v0)
+	fixedSub (devX2, devX2, sx2)
+	move	destR, 0
+	move	destG, 0
+	move	destB, 0
+	fixedMult (psj, jstart, psstep)
+	fixedSub (psj, ps0, psj)
+	move	dy, devY1
+	
+
+	ble	x, destwidth, horizontal_dest
+	
+	fixedAdd (pdy, pdy, pdstep)
+	ble	y, destheight, vertical_dest
 
 debugStr("<<<<< IMAGE PROCESSING")
 debugStr("")

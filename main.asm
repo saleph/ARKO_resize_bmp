@@ -358,27 +358,6 @@ debugStr("")
 	
 	.data
 	.align 2
-ps0_fiy:		.space	4		
-pd0_dyf:		.space	4		
-psstep_fxstep:		.space	4		
-pdstep_fystep:		.space	4		
-sx1_dx:			.space	4		
-sy1_dy:			.space	4		
-sx2_color:		.space	4		
-sy2_pdy:		.space	4		
-x_pdx:			.space	4		
-y_psi:			.space	4		
-i_psj:			.space	4		
-jj_AP:			.space	4
-destwidth_istart:	.space	4		
-destheight_iend:	.space	4		
-destR_jstart:		.space	4		
-destG_jend:		.space	4		
-destB_devX1:		.space	4		
-sBGR_devX2:		.space	4		
-fx_devY1:		.space	4		
-fy_devY2:		.space	4
-
 ps0_:	.space 4
 pd0_:	.space 4
 psstep_:	.space 4
@@ -390,13 +369,13 @@ sy2_:	.space 4
 x_:	.space 4
 y_:	.space 4
 i_:	.space 4
-j_:	.space 4
+jj_:	.space 4
 destwidth_:	.space 4
 destheight_:	.space 4
 destR_:	.space 4
 destG_:	.space 4
 destB_:	.space 4
-sRGB_:	.space 4
+sBGR_:	.space 4
 fx_:	.space 4
 fy_:	.space 4
 	
@@ -429,123 +408,6 @@ devY2_:	.space 4
 	move	%first, $v0
 	.end_macro
 	
-	.macro	ps0_from_ps0_fiy()
-	setFirst(ps0, fiy, ps0_fiy)
-	.end_macro																	
-	.macro	pd0_from_pd0_dyf()
-	setFirst(pd0, dyf, pd0_dyf)
-	.end_macro																	
-	.macro	psstep_from_psstep_fxstep()
-	setFirst(psstep, fxstep, psstep_fxstep)
-	.end_macro																	
-	.macro	pdstep_from_pdstep_fystep()
-	setFirst(pdstep, fystep, pdstep_fystep)
-	.end_macro																	
-	.macro	sx1_from_sx1_dx()
-	setFirst(sx1, dx, sx1_dx)
-	.end_macro																	
-	.macro	sy1_from_sy1_dy()
-	setFirst(sy1, dy, sy1_dy)
-	.end_macro																
-	.macro	sy2_from_sy2_pdy()
-	setFirst(sy2, pdy, sy2_pdy)
-	.end_macro																	
-	.macro	x_from_x_pdx()
-	setFirst(x, pdx, x_pdx)
-	.end_macro																	
-	.macro	y_from_y_psi()
-	setFirst(y, psi, y_psi)
-	.end_macro																	
-	.macro	i_from_i_psj()
-	setFirst(i, psj, i_psj)
-	.end_macro																	
-	.macro	jj_from_jj_AP()
-	setFirst(jj, AP, jj_AP)
-	.end_macro																	
-	.macro	destwidth_from_destwidth_istart()
-	setFirst(destwidth, istart, destwidth_istart)
-	.end_macro																	
-	.macro	destheight_from_destheight_iend()
-	setFirst(destheight, iend, destheight_iend)
-	.end_macro																	
-	.macro	destR_from_destR_jstart()
-	setFirst(destR, jstart, destR_jstart)
-	.end_macro																	
-	.macro	destG_from_destG_jend()
-	setFirst(destG, jend, destG_jend)
-	.end_macro																	
-	.macro	destB_from_destB_devX1()
-	setFirst(destB, devX1, destB_devX1)
-	.end_macro																	
-	.macro	sBGR_from_sBGR_devX2()
-	setFirst(sBGR, devX2, sBGR_devX2)
-	.end_macro																	
-	.macro	fx_from_fx_devY1()
-	setFirst(fx, devY1, fx_devY1)
-	.end_macro																	
-	.macro	fy_from_fy_devY2()
-	setFirst(fy, devY2, fy_devY2)
-	.end_macro																	
-																				
-	.macro	fiy_from_ps0_fiy()
-	setFirst(fiy, ps0, ps0_fiy)
-	.end_macro																	
-	.macro	dyf_from_pd0_dyf()
-	setFirst(dyf, pd0, pd0_dyf)
-	.end_macro																	
-	.macro	fxstep_from_psstep_fxstep()
-	setFirst(fxstep, psstep, psstep_fxstep)
-	.end_macro																	
-	.macro	fystep_from_pdstep_fystep()
-	setFirst(fystep, pdstep, pdstep_fystep)
-	.end_macro																	
-	.macro	dx_from_sx1_dx()
-	setFirst(dx, sx1, sx1_dx)
-	.end_macro																	
-	.macro	dy_from_sy1_dy()
-	setFirst(dy, sy1, sy1_dy)
-	.end_macro															
-	.macro	pdy_from_sy2_pdy()
-	setFirst(pdy, sy2, sy2_pdy)
-	.end_macro																	
-	.macro	pdx_from_x_pdx()
-	setFirst(pdx, x, x_pdx)
-	.end_macro																	
-	.macro	psi_from_y_psi()
-	setFirst(psi, y, y_psi)
-	.end_macro																	
-	.macro	psj_from_i_psj()
-	setFirst(psj, i, i_psj)
-	.end_macro																	
-	.macro	AP_from_jj_AP()
-	setFirst(AP, jj, jj_AP)
-	.end_macro																	
-	.macro	istart_from_destwidth_istart()
-	setFirst(istart, destwidth, destwidth_istart)
-	.end_macro																	
-	.macro	iend_from_destheight_iend()
-	setFirst(iend, destheight, destheight_iend)
-	.end_macro																	
-	.macro	jstart_from_destR_jstart()
-	setFirst(jstart, destR, destR_jstart)
-	.end_macro																	
-	.macro	jend_from_destG_jend()
-	setFirst(jend, destG, destG_jend)
-	.end_macro																	
-	.macro	devX1_from_destB_devX1()
-	setFirst(devX1, destB, destB_devX1)
-	.end_macro																	
-	.macro	devX2_from_sBGR_devX2()
-	setFirst(devX2, sBGR, sBGR_devX2)
-	.end_macro																	
-	.macro	devY1_from_fx_devY1()
-	setFirst(devY1, fx, fx_devY1)
-	.end_macro																	
-	.macro	devY2_from_fy_devY2()
-	setFirst(devY2, fy, fy_devY2)
-	.end_macro
-	
-	
 	################################
 	.macro	ps0_from_ps0_fiy()
 	setFirst(ps0, fiy, ps0_, fiy_)
@@ -571,13 +433,17 @@ devY2_:	.space 4
 	.macro	sy2_from_sy2_pdy()	
 	setFirst(sy2, pdy, sy2_, pdy_)
 	.end_macro
-	.macro	x_from_x_pdx()	setFirst(x, pdx, x_, pdx_)
+	.macro	x_from_x_pdx()	
+	setFirst(x, pdx, x_, pdx_)
 	.end_macro
-	.macro	y_from_y_psi()	setFirst(y, psi, y_, psi_)
+	.macro	y_from_y_psi()	
+	setFirst(y, psi, y_, psi_)
 	.end_macro
-	.macro	i_from_i_psj()	setFirst(i, psj, i_, psj_)
+	.macro	i_from_i_psj()	
+	setFirst(i, psj, i_, psj_)
 	.end_macro
-	.macro	j_from_j_AP()	setFirst(j, AP, j_, AP_)
+	.macro	jj_from_jj_AP()	
+	setFirst(jj, AP, jj_, AP_)
 	.end_macro
 	.macro	destwidth_from_destwidth_istart()	
 	setFirst(destwidth, istart, destwidth_, istart_)
@@ -588,13 +454,14 @@ devY2_:	.space 4
 	.macro	destR_from_destR_jstart()	
 	setFirst(destR, jstart, destR_, jstart_)
 	.end_macro
-	.macro	destG_from_destG_jend()	setFirst(destG, jend, destG_, jend_)
+	.macro	destG_from_destG_jend()	
+	setFirst(destG, jend, destG_, jend_)
 	.end_macro
 	.macro	destB_from_destB_devX1()	
 	setFirst(destB, devX1, destB_, devX1_)
 	.end_macro
-	.macro	sRGB_from_sRGB_devX2()	
-	setFirst(sRGB, devX2, sRGB_, devX2_)
+	.macro	sBGR_from_sBGR_devX2()	
+	setFirst(sBGR, devX2, sBGR_, devX2_)
 	.end_macro
 	.macro	fx_from_fx_devY1()	
 	setFirst(fx, devY1, fx_, devY1_)
@@ -636,8 +503,8 @@ devY2_:	.space 4
 	.macro	psj_from_i_psj()	
 	setFirst(psj, i, psj_, i_)
 	.end_macro
-	.macro	AP_from_j_AP()	
-	setFirst(AP, j, AP_, j_)
+	.macro	AP_from_jj_AP()	
+	setFirst(AP, jj, AP_, jj_)
 	.end_macro
 	.macro	istart_from_destwidth_istart()	
 	setFirst(istart, destwidth, istart_, destwidth_)
@@ -648,13 +515,14 @@ devY2_:	.space 4
 	.macro	jstart_from_destR_jstart()	
 	setFirst(jstart, destR, jstart_, destR_)
 	.end_macro
-	.macro	jend_from_destG_jend()	setFirst(jend, destG, jend_, destG_)
+	.macro	jend_from_destG_jend()	
+	setFirst(jend, destG, jend_, destG_)
 	.end_macro
 	.macro	devX1_from_destB_devX1()	
 	setFirst(devX1, destB, devX1_, destB_)
 	.end_macro
-	.macro	devX2_from_sRGB_devX2()	
-	setFirst(devX2, sRGB, devX2_, sRGB_)
+	.macro	devX2_from_sBGR_devX2()	
+	setFirst(devX2, sBGR, devX2_, sBGR_)
 	.end_macro
 	.macro	devY1_from_fx_devY1()	
 	setFirst(devY1, fx, devY1_, fx_)
@@ -805,7 +673,7 @@ if1:
 	fixedMult (dyf, dy, fiy)
 	li	$v0, 3
 	#fixedFromInt ($v0)
-		psi_from_y_psi()
+		#psi_from_y_psi()
 		istart_from_destwidth_istart()
 	#fixedMult (psi, istart, $v0)
 	multu	istart, $v0
@@ -830,7 +698,7 @@ if2:
 		dyf_from_pd0_dyf()
 	fixedMult (AP, dx, dyf)		# compute area factor
 	fixedMult (AP, AP, fix)
-		psi_from_y_psi()
+		#psi_from_y_psi()
 	#fixedToInt (psi)		# switch pointer to int from fixed
 	
 	debug("Load adress: ", psi)

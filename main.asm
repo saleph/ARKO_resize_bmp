@@ -101,7 +101,7 @@ Loop:	%bodyMacroName ()
         li	$v0, 14			# read from file
   	lw	$a0, in_file_desc	# file descriptor
   	la	$a1, %dest		# destination	
-  	li	$a2, %size		# max file size
+  	add	$a2, $zero, %size	# max file size
   	syscall
         .end_macro
         
@@ -182,6 +182,12 @@ Loop:	%bodyMacroName ()
 	sra	$v0, $v0, 8
 	div	%dest, $v0
 	mflo	%dest
+	.end_macro
+	
+	.macro fixedInversion (%dest, %source)
+	li	$v0, 1
+	fixedFromInt ($v0)
+	fixedDiv (%dest, $v0, %source)
 	.end_macro
 	
 	##################### IMAGE COMPUTING MACROS #####################
@@ -300,8 +306,8 @@ debugStr("")
 ########################################## VARIABLES ##########################################
 	.eqv		ps0		$ra
 	.eqv		pd0		$fp
-	.eqv		psStep		$t9
-	.eqv		pdStep		$t8
+	.eqv		psstep		$t9
+	.eqv		pdstep		$t8
 	.eqv		sx1		$t7
 	.eqv		sy1		$t6
 	.eqv		sx2		$t5
@@ -495,7 +501,42 @@ fy_devY2:		.space	4
 ########################################## IMAGE PROCESSING ##########################################
 debugStr(">>>>> IMAGE PROCESSING")
 	
-
+	# TODO: partial read process
+	lw	$v0, INROWSIZE
+	lw	$v1, INHEIGHT
+	multu	$v0, $v1
+	mflo	$v0
+	readFromImg (inimg, $v0)
+	lw	destwidth, OUTWIDTH
+	lw	destheight, OUTHEIGHT
+	lw	$v0, INWIDTH
+	lw	$v1, INHEIGHT
+	# convert to fixed point
+	fixedFromInt (destwidth)
+	fixedFromInt (destheight)
+	fixedFromInt ($v0)
+	fixedFromInt ($v1)
+	# compute scalling factors
+	fixedDiv (fx, $v0, destwidth)
+	debug("Scalling factor x: ", fx)
+	fixedDiv (fy, $v1, destheight)
+	debug("Scalling factor y: ", fy)
+	fixedAdd (destwidth, destwidth, -1)
+	fixedAdd (destheight, destheight, -1)
+	la	ps0, inimg
+	lw	psstep, INROWSIZE
+	la	pd0, outimg
+	lw	pdstep, OUTROWSIZE
+	fixedFromInt (ps0)
+	fixedFromInt (psstep)
+	fixedFromInt (pd0)
+	fixedFromInt (pdstep)
+	
+	fixedInversion (fix, fx)
+	fixedInversion (fiy, fy)
+	li	$v0, 65529
+	fixedMult (fxstep, fx, $v0) 		# multiply fx by 0.9999
+	fixedMult (fystep, fy, $v0)
 
 debugStr("<<<<< IMAGE PROCESSING")
 debugStr("")

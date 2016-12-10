@@ -328,7 +328,7 @@ debugStr("")
 	.eqv		destR		$s5
 	.eqv		destG		$s4
 	.eqv		destB		$s3
-	.eqv		sRGB		$s2
+	.eqv		sBGR		$s2
 	.eqv		fx		$s1
 	.eqv		fy		$s0
 	.eqv		fix		$a3
@@ -372,7 +372,7 @@ destheight_iend:	.space	4
 destR_jstart:		.space	4		
 destG_jend:		.space	4		
 destB_devX1:		.space	4		
-sRGB_devX2:		.space	4		
+sBGR_devX2:		.space	4		
 fx_devY1:		.space	4		
 fy_devY2:		.space	4
 	
@@ -434,8 +434,8 @@ fy_devY2:		.space	4
 	.macro	destB_from_destB_devX1()
 	setFirst(destB, devX1, destB_devX1)
 	.end_macro																	
-	.macro	sRGB_from_sRGB_devX2()
-	setFirst(sRGB, devX2, sRGB_devX2)
+	.macro	sBGR_from_sBGR_devX2()
+	setFirst(sBGR, devX2, sBGR_devX2)
 	.end_macro																	
 	.macro	fx_from_fx_devY1()
 	setFirst(fx, devY1, fx_devY1)
@@ -495,8 +495,8 @@ fy_devY2:		.space	4
 	.macro	devX1_from_destB_devX1()
 	setFirst(devX1, destB, destB_devX1)
 	.end_macro																	
-	.macro	devX2_from_sRGB_devX2()
-	setFirst(devX2, sRGB, sRGB_devX2)
+	.macro	devX2_from_sBGR_devX2()
+	setFirst(devX2, sBGR, sBGR_devX2)
 	.end_macro																	
 	.macro	devY1_from_fx_devY1()
 	setFirst(devY1, fx, fx_devY1)
@@ -581,16 +581,84 @@ horizontal_dest:
 	fixedFromInt ($v0)
 	fixedAdd (devX2, iend, $v0)
 	fixedSub (devX2, devX2, sx2)
-	move	destR, 0
-	move	destG, 0
-	move	destB, 0
+	li	destR, 0		# prepare colors acumulators
+	li	destG, 0
+	li	destB, 0
 	fixedMult (psj, jstart, psstep)
 	fixedSub (psj, ps0, psj)
 	move	dy, devY1
 	
+	
+	move	jj, jstart
+vertical_source:
+	bne	jj, jend, if1
+	fixedSub (dy, dy, devY2)	# if last pixel vert, norm the dy
+if1:
+	fixedMult (dyf, dy, fiy)
+	li	$v0, 3
+	fixedFromInt ($v0)
+	fixedMult (psi, istart, $v0)
+	fixedAdd (psi, psi, psj)
+	move	dx, devX1
 
+	move	i, istart
+horizontal_source:
+	bne	i, iend, if2
+	fixedSub (dx, dx, devX2)
+if2:
+	fixedMult (AP, dx, dyf)		# compute area factor
+	fixedMult (AP, AP, fix)
+	fixedToInt (psi)		# switch pointer to int from fixed
+	
+	lb	$v0, (psi)		# load Blue
+	fixedFromInt ($v0)
+	fixedMult ($v0, $v0, AP)
+	fixedAdd (destB, destB, $v0)
+	
+	lb	$v0, 1(psi)		# load Green
+	fixedFromInt ($v0)
+	fixedMult ($v0, $v0, AP)
+	fixedAdd (destG, destG, $v0)
+	
+	lb	$v0, 2(psi)		# load Red
+	fixedFromInt ($v0)
+	fixedMult ($v0, $v0, AP)
+	fixedAdd (destR, destR, $v0)
+	
+	addiu	psi, psi, 3
+	fixedFromInt (psi)
+	
+	li	$v0, 1
+	fixedFromInt ($v0)
+	move	dx, $v0
+
+	ble	i, iend, horizontal_source
+
+# vertical source
+	fixedSub (psj, psj, psstep)
+	li	$v0, 1
+	fixedFromInt ($v0)
+	move	dy, $v0			# set dy factor as default for 1 
+	ble	jj, jend, vertical_source
+
+# horizontal dest
+	fixedToInt (pdx)
+	# store pixel
+	move	$v0, destB
+	fixedToInt ($v0)
+	sb	$v0, (pdx)
+	move	$v0, destG
+	fixedToInt ($v0)
+	sb	$v0, 1(pdx)
+	move	$v0, destR
+	fixedToInt ($v0)
+	sb	$v0, 2(pdx)
+
+	addiu	pdx, pdx, 3
+	fixedFromInt (pdx)
 	ble	x, destwidth, horizontal_dest
 	
+# vertical dest
 	fixedAdd (pdy, pdy, pdstep)
 	ble	y, destheight, vertical_dest
 

@@ -3,6 +3,10 @@
 		
 ########################################## DATA ##############################################################
 		.data
+inimg:		.space 	2		# for buffer shift
+inheader:	.space 	BUFFER_SIZE	# 1,6 MB for input
+
+		.align 	2
 in_file_desc:	.space	4		# input image file descriptor
 out_file_desc:	.space	4		# output image file descriptor
 INWIDTH:	.space	4		# input image width in pixels
@@ -13,11 +17,8 @@ INROWSIZE:	.space 	4		# input img row size (with padding)
 B_OUTWIDTH:	.space 	4		# output img width in bytes
 OUTHEIGHT:	.space 	4		# output img height (no of rows)
 OUTROWSIZE:	.space 	4		# output img row size (with padding)
-fin:		.asciiz	"image2.bmp"
+fin:		.asciiz	"image3.bmp"
 fout:		.asciiz	"image_scaled.bmp"
-		.align 	2
-inimg:		.space 	2		# for buffer shift
-inheader:	.space 	BUFFER_SIZE	# 1,6 MB for input
 		.align	2
 outimg:		.space 	2		# for header shift
 outheader:	.space 	BUFFER_SIZE	# 1,6 MB for output
@@ -532,10 +533,10 @@ debugStr(">>>>> IMAGE PROCESSING")
 	lw	psstep, INROWSIZE
 	la	pd0, outimg
 	lw	pdstep, OUTROWSIZE
-	fixedFromInt (ps0)
-	fixedFromInt (psstep)
-	fixedFromInt (pd0)
-	fixedFromInt (pdstep)
+	#fixedFromInt (ps0)
+	#fixedFromInt (psstep)
+	#fixedFromInt (pd0)
+	#fixedFromInt (pdstep)
 	
 		fiy_from_ps0_fiy()
 	fixedInversion (fix, fx)
@@ -546,7 +547,7 @@ debugStr(">>>>> IMAGE PROCESSING")
 	fixedMult (fxstep, fx, $v0) 		# multiply fx by 0.9999
 	fixedMult (fystep, fy, $v0)
 	
-		ps0_from_ps0_fiy()
+		pdy_from_sy2_pdy()
 		pd0_from_pd0_dyf()
 	move	pdy, pd0
 	
@@ -706,7 +707,7 @@ if2:
 
 # horizontal dest
 		pdx_from_x_pdx()
-	fixedToInt (pdx)
+	#fixedToInt (pdx)	# pdx cannot be fixed - it is too large
 	# store pixel
 		destB_from_destB_devX1()
 	move	$v0, destB
@@ -723,13 +724,14 @@ if2:
 
 		destwidth_from_destwidth_istart()
 	addiu	pdx, pdx, 3
-	fixedFromInt (pdx)
+	#fixedFromInt (pdx)
 		x_from_x_pdx()
 	ble	x, destwidth, horizontal_dest
 	
 # vertical dest
 		pdy_from_sy2_pdy()
 		pdstep_from_pdstep_fystep()
+	
 	fixedAdd (pdy, pdy, pdstep)
 		y_from_y_psi()
 		destheight_from_destheight_iend()

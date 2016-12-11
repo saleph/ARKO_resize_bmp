@@ -53,12 +53,12 @@ str:	.asciiz %str
 	
 	##########################################
 	.macro printFixed (%x)
-	sra	$v1, %x, 16
-	printInt ($v1)
+	sra	$a2, %x, 16
+	printInt ($a2)
 	printStr (".")
-	sll	$v1, %x, 16
-	srl	$v1, $v1, 16
-	printInt ($v1)
+	sll	$a2, %x, 16
+	srl	$a2, $a2, 16
+	printInt ($a2)
 	.end_macro
 	
 	##########################################
@@ -354,7 +354,7 @@ debugStr("")
 	.eqv		sBGR		$s2
 	.eqv		fx		$s1
 	.eqv		fy		$s0
-	.eqv		fix		$a3
+	.eqv		fix		$v1
 	.eqv		fiy		$ra
 	.eqv		dyf		$fp
 	.eqv		fxstep		$t9
@@ -556,19 +556,20 @@ debugStr(">>>>> IMAGE PROCESSING")
 	
 	# TODO: partial read process
 	lw	$v0, INROWSIZE
-	lw	$v1, INHEIGHT
-	multu	$v0, $v1
+	lw	$a3, INHEIGHT
+	multu	$v0, $a3
 	mflo	$a3
 	readFromImg (inimg, $a3)
+	
 	lw	destwidth, OUTWIDTH
 	lw	destheight, OUTHEIGHT
 	lw	$a3, INWIDTH
 	lw	$a2, INHEIGHT
 	# convert to fixed point
-	fixedFromInt (destwidth)
-	fixedFromInt (destheight)
 	fixedFromInt ($a3)
 	fixedFromInt ($a2)
+	fixedFromInt (destwidth)
+	fixedFromInt (destheight)
 	# compute scalling factors
 	fixedDiv (fx, $a3, destwidth)
 	debugF("Scalling factor x: ", fx)
@@ -592,22 +593,28 @@ debugStr(">>>>> IMAGE PROCESSING")
 	
 	
 	fixedInversion (fix, fx)
+	debug ("fix: ", fix)
 		fiy_from_ps0_fiy()
 	fixedInversion (fiy, fy)
+	debug ("fiy: ", fiy)
 		ps0_from_ps0_fiy()
 
-	li	$a3, 65500
+	li	$a3, 65900
 		fxstep_from_psstep_fxstep()
-	fixedMult (fxstep, fx, $a3) 		# multiply fx by 0.9999
+	#fixedMult (fxstep, fx, $a3) 		# multiply fx by 0.9999
+	move	fxstep, fx
+	debugF ("===============fxstep: ", fxstep)
 		psstep_from_psstep_fxstep()
 
 		fystep_from_pdstep_fystep()
-	fixedMult (fystep, fy, $a3)
+	#fixedMult (fystep, fy, $a3)
+	move	fystep, fy
+	debugF ("==============fxystep: ", fystep)
 		pdstep_from_pdstep_fystep()
 
 		pdy_from_sy2_pdy()
 	move	pdy, pd0
-	debugF ("pdy: ", pdy)
+	debug ("pdy: ", pdy)
 		sy2_from_sy2_pdy()
 
 	
@@ -618,11 +625,11 @@ debugStr(">>>>> IMAGE PROCESSING")
 vertical_dest:
 
 	fixedMult (sy1, fy, y)
-	debugF ("sy1: ", sy1)
+	debugF ("   sy1: ", sy1)
 	
 		fystep_from_pdstep_fystep()
 	fixedAdd (sy2, sy1, fystep)
-	debugF ("sy2: ", sy2)
+	debugF ("   sy2: ", sy2)
 		pdstep_from_pdstep_fystep()
 
 		jstart_from_destR_jstart()
@@ -660,10 +667,10 @@ vertical_dest:
 horizontal_dest:
 
 	fixedMult (sx1, fx, x)
-	debugF ("sx1: ", sx1)
+	#debugF ("sx1: ", sx1)
 		fxstep_from_psstep_fxstep()
 	fixedAdd (sx2, sx1, fxstep)
-	debugF ("sx2: ", sx2)
+	#debugF ("sx2: ", sx2)
 		psstep_from_psstep_fxstep()
 
 		istart_from_destwidth_istart()
@@ -702,11 +709,14 @@ horizontal_dest:
 		
 	fixedToInt (jstart)
 	multu	jstart, psstep		# jump to jstart row
+	#debug ("----------jstart: ", jstart)
 	mflo	psj
 	fixedFromInt (jstart)
 	
 	
 	addu	psj, ps0, psj
+	#debug ("----------ps0: ", ps0)
+	#debug ("----------psj: ", psj)
 		i_from_i_psj()
 	
 		devY1_from_fx_devY1()
@@ -743,12 +753,13 @@ if1:
 		psi_from_y_psi()
 		istart_from_destwidth_istart()
 	fixedToInt (istart)
+	#debug ("----------istart: ", istart)
 	multu	istart, $a3		# jump to particular pixel
 	fixedFromInt (istart)
 	mflo	psi
-		psj_from_i_psj()	
-	#fixedAdd (psi, psi, psj)
+		psj_from_i_psj()
 	addu	psi, psi, psj
+	#debug ("----------psi: ", psi)
 		y_from_y_psi()
 		i_from_i_psj()
 
@@ -777,28 +788,35 @@ if2:
 		dx_from_sx1_dx()
 		AP_from_jj_AP()
 	fixedMult (AP, dx, dyf)		# compute area factor
+	debugF ("// dx: ", dx)
+	debugF ("// dyf: ", dyf)
 		pd0_from_pd0_dyf()
 		sx1_from_sx1_dx()
 	fixedMult (AP, AP, fix)
-
+	debugF ("// fix: ", fix)
+	debugF ("// AP: ", AP)
 
 		
 		psi_from_y_psi()
 	
+	#debug ("----------========psi: ", psi)
 	#debug("Load adress: ", psi)
 	lbu	$a3, (psi)		# load Blue
+	debug("blue: ", $a3)
 	fixedFromInt ($a3)
 	fixedMult ($a3, $a3, AP)
 	
 	fixedAdd (destB, destB, $a3)
 	
 	lbu	$a3, 1(psi)		# load Green
+	debug("green: ", $a3)
 	fixedFromInt ($a3)
 	fixedMult ($a3, $a3, AP)
 	
 	fixedAdd (destG, destG, $a3)
 	
 	lbu	$a3, 2(psi)		# load Red
+	debug("red: ", $a3)
 	fixedFromInt ($a3)
 	fixedMult ($a3, $a3, AP)
 		jj_from_jj_AP()
@@ -849,22 +867,22 @@ if2:
 		pdx_from_x_pdx()
 	#fixedToInt (pdx)	# pdx cannot be fixed - it is too large
 	# store pixel
-	#debug("Store address: ", pdx)
+	debug("---------======pdx: ", pdx)
 	move	$a3, destB
 	fixedToInt ($a3)	# truncate destB
 	sb	$a3, (pdx)
-	#debug("Blue: ", $v0)
+	debug("stored Blue: ", $v0)
 	
 	move	$a3, destG
 	fixedToInt ($a3)
 	sb	$a3, 1(pdx)
-	#debug("Green: ", $v0)
+	debug("stored Green: ", $v0)
 	
 	
 	move	$a3, destR
 	fixedToInt ($a3)
 	sb	$a3, 2(pdx)
-	#debug("Red: ", $v0)
+	debug("stored Red: ", $v0)
 	
 
 	addiu	pdx, pdx, 3
@@ -879,6 +897,7 @@ if2:
 		pdy_from_sy2_pdy()
 	#fixedAdd (pdy, pdy, pdstep)
 	addu	pdy, pdy, pdstep
+	debug("---------pdy: ", pdy)
 		sy2_from_sy2_pdy()
 
 	fixedAdd (y, y, 65536)

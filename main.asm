@@ -78,10 +78,10 @@ str:	.asciiz %str
 	
 	##########################################
 	.macro debugF (%str, %x)
-	#printStr("##### ")
-	#printStr(%str)
-	#printFixed(%x)
-	#printStr("\n")
+	printStr("##### ")
+	printStr(%str)
+	printFixed(%x)
+	printStr("\n")
 	.end_macro
 	
 	##########################################
@@ -596,7 +596,7 @@ debugStr(">>>>> IMAGE PROCESSING")
 	fixedInversion (fiy, fy)
 		ps0_from_ps0_fiy()
 
-	li	$a3, 65529
+	li	$a3, 65500
 		fxstep_from_psstep_fxstep()
 	fixedMult (fxstep, fx, $a3) 		# multiply fx by 0.9999
 		psstep_from_psstep_fxstep()
@@ -607,6 +607,7 @@ debugStr(">>>>> IMAGE PROCESSING")
 
 		pdy_from_sy2_pdy()
 	move	pdy, pd0
+	debugF ("pdy: ", pdy)
 		sy2_from_sy2_pdy()
 
 	
@@ -622,16 +623,14 @@ vertical_dest:
 		fystep_from_pdstep_fystep()
 	fixedAdd (sy2, sy1, fystep)
 	debugF ("sy2: ", sy2)
-	debug ("fystep: ", fystep)
 		pdstep_from_pdstep_fystep()
 
 		jstart_from_destR_jstart()
 	fixedTrunc (jstart, sy1)
+	#debugF ("jstart: ", jstart)
 	
 		jend_from_destG_jend()
 	fixedTrunc (jend, sy2)
-	debugF ("-----------------sy2: ", sy2)
-	debugF ("-----------------jend: ", jend)
 	li	$a3, 1
 	fixedFromInt ($a3)
 	
@@ -661,12 +660,15 @@ vertical_dest:
 horizontal_dest:
 
 	fixedMult (sx1, fx, x)
+	debugF ("sx1: ", sx1)
 		fxstep_from_psstep_fxstep()
 	fixedAdd (sx2, sx1, fxstep)
+	debugF ("sx2: ", sx2)
 		psstep_from_psstep_fxstep()
 
 		istart_from_destwidth_istart()
 	fixedTrunc (istart, sx1)		# truncate
+	#debugF ("istart: ", istart)
 	
 		iend_from_destheight_iend()
 	fixedTrunc (iend, sx2)
@@ -697,13 +699,13 @@ horizontal_dest:
 	
 		psj_from_i_psj()
 		jstart_from_destR_jstart()
-	#fixedMult (psj, jstart, psstep)
+		
 	fixedToInt (jstart)
-	multu	jstart, psstep
+	multu	jstart, psstep		# jump to jstart row
 	mflo	psj
 	fixedFromInt (jstart)
 	
-	#fixedSub (psj, ps0, psj)
+	
 	addu	psj, ps0, psj
 		i_from_i_psj()
 	
@@ -714,6 +716,7 @@ horizontal_dest:
 		fx_from_fx_devY1()
 	
 	move	jj, jstart
+	#debugF("jstart: ", jstart)
 		destR_from_destR_jstart()
 vertical_source:
 		jend_from_destG_jend()
@@ -740,7 +743,7 @@ if1:
 		psi_from_y_psi()
 		istart_from_destwidth_istart()
 	fixedToInt (istart)
-	multu	istart, $a3
+	multu	istart, $a3		# jump to particular pixel
 	fixedFromInt (istart)
 	mflo	psi
 		psj_from_i_psj()	
@@ -782,7 +785,7 @@ if2:
 		
 		psi_from_y_psi()
 	
-	debug("Load adress: ", psi)
+	#debug("Load adress: ", psi)
 	lbu	$a3, (psi)		# load Blue
 	fixedFromInt ($a3)
 	fixedMult ($a3, $a3, AP)
@@ -817,8 +820,8 @@ if2:
 		destheight_from_destheight_iend()
 		
 	fixedAdd (i, i, 65536)
-	debugF ("         i: ", i)
-	debugF ("         iend: ", iend)
+	#debugF ("         i: ", i)
+	#debugF ("         iend: ", iend)
 	ble	i, $a3, horizontal_source
 
 # vertical source ###########################################
@@ -838,15 +841,15 @@ if2:
 		destG_from_destG_jend()
 		
 		fixedAdd (jj, jj, 65536)
-	debugF("      jj: ", jj)
-	debugF("      jend: ", $a3)
+	#debugF("      jj: ", jj)
+	#debugF("      jend: ", $a3)
 	ble	jj, $a3, vertical_source
 
 # horizontal dest ###########################################
 		pdx_from_x_pdx()
 	#fixedToInt (pdx)	# pdx cannot be fixed - it is too large
 	# store pixel
-	debug("Store address: ", pdx)
+	#debug("Store address: ", pdx)
 	move	$a3, destB
 	fixedToInt ($a3)	# truncate destB
 	sb	$a3, (pdx)
@@ -868,8 +871,8 @@ if2:
 		x_from_x_pdx()
 	
 	fixedAdd (x, x, 65536)
-	debugF ("   x: ", x)
-	debugF ("   destwidth: ", destwidth)
+	#debugF ("   x: ", x)
+	#debugF ("   destwidth: ", destwidth)
 	ble	x, destwidth, horizontal_dest
 	
 # vertical dest ###########################################
@@ -879,8 +882,8 @@ if2:
 		sy2_from_sy2_pdy()
 
 	fixedAdd (y, y, 65536)
-	debugF ("y: ", y)
-	debugF ("destheight: ", destheight)
+	#debugF ("y: ", y)
+	#debugF ("destheight: ", destheight)
 	ble	y, destheight, vertical_dest
 
 debugStr("<<<<< IMAGE PROCESSING")

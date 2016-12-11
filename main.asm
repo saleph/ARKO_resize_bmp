@@ -156,14 +156,14 @@ Loop:	%bodyMacroName ()
 	#printStr("[width]")
 	#li	$v0, 5			# load int
 	#syscall
-	li	$v0, 128
+	li	$v0, 30
 	sw	$v0, OUTWIDTH
 	multBy3($v0)
 	sw	$v0, B_OUTWIDTH
 	printStr("[height]")
 	#li	$v0, 5			# load int
 	#syscall
-	li	$v0, 128
+	li	$v0, 30
 	sw	$v0, OUTHEIGHT		# copy height
 	.end_macro
 	
@@ -261,7 +261,7 @@ debugStr(">> INPUT HEADER PARSING")
 	debug("BMP size: ", $t0)
 	
 	lw	$t0, inheader + 0xA
-	debug("IMG array offset: ", $t0)
+	debug("################IMG array offset: ", $t0)
 	
 	lw	$t0, inheader + 0x12
 	debug("Width: ", $t0)
@@ -560,6 +560,7 @@ debugStr(">>>>> IMAGE PROCESSING")
 	multu	$v0, $a3
 	mflo	$a3
 	readFromImg (inimg, $a3)
+	storeToImg (inimg, $a3)
 	
 	lw	destwidth, OUTWIDTH
 	lw	destheight, OUTHEIGHT
@@ -599,16 +600,16 @@ debugStr(">>>>> IMAGE PROCESSING")
 	debugF ("fiy: ", fiy)
 		ps0_from_ps0_fiy()
 
-	li	$a3, 65900
+	li	$a3, 65529
 		fxstep_from_psstep_fxstep()
-	#fixedMult (fxstep, fx, $a3) 		# multiply fx by 0.9999
-	move	fxstep, fx
+	fixedMult (fxstep, fx, $a3) 		# multiply fx by 0.9999
+	#move	fxstep, fx
 	#debugF ("===============fxstep: ", fxstep)
 		psstep_from_psstep_fxstep()
 
 		fystep_from_pdstep_fystep()
-	#fixedMult (fystep, fy, $a3)
-	move	fystep, fy
+	fixedMult (fystep, fy, $a3)
+	#move	fystep, fy
 	#debugF ("==============fxystep: ", fystep)
 		pdstep_from_pdstep_fystep()
 
@@ -686,6 +687,7 @@ horizontal_dest:
 	fixedAdd (devX1, istart, $a3)
 		destwidth_from_destwidth_istart()
 	fixedSub (devX1, devX1, sx1)
+	#debugF ("/// devX1: ", devX1)
 		destB_from_destB_devX1()
 
 	li	$a3, 1
@@ -697,6 +699,7 @@ horizontal_dest:
 	
 		destheight_from_destheight_iend()
 	fixedSub (devX2, devX2, sx2)
+	#debugF ("/// devX2: ", devX2)
 		sBGR_from_sBGR_devX2()
 
 	
@@ -871,20 +874,23 @@ if2:
 	# store pixel
 	#debug("---------======pdx: ", pdx)
 	move	$a3, destB
+	#debugF ("destB before store: ", destB)
 	fixedToInt ($a3)	# truncate destB
 	sb	$a3, (pdx)
-	debug("stored Blue: ", $v0)
+	debug("stored Blue: ", $a3)
 	
 	move	$a3, destG
+	#debugF ("destG before store: ", destG)
 	fixedToInt ($a3)
 	sb	$a3, 1(pdx)
-	debug("stored Green: ", $v0)
+	debug("stored Green: ", $a3)
 	
 	
 	move	$a3, destR
+	#debugF ("destR before store: ", destR)
 	fixedToInt ($a3)
 	sb	$a3, 2(pdx)
-	debug("stored Red: ", $v0)
+	debug("stored Red: ", $a3)
 	
 
 	addiu	pdx, pdx, 3

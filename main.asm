@@ -563,17 +563,17 @@ debugStr(">>>>> IMAGE PROCESSING")
 	
 	lw	destwidth, OUTWIDTH
 	lw	destheight, OUTHEIGHT
-	lw	$a3, INWIDTH
-	lw	$a2, INHEIGHT
+	lw	fix, INWIDTH
+	lw	fiy, INHEIGHT
 	# convert to fixed point
-	fixedFromInt ($a3)
-	fixedFromInt ($a2)
+	fixedFromInt (fix)
+	fixedFromInt (fiy)
 	fixedFromInt (destwidth)
 	fixedFromInt (destheight)
 	# compute scalling factors
-	fixedDiv (fx, $a3, destwidth)
+	fixedDiv (fx, fix, destwidth)
+	fixedDiv (fy, fiy, destheight)
 	debugF("Scalling factor x: ", fx)
-	fixedDiv (fy, $a2, destheight)
 	debugF("Scalling factor y: ", fy)
 	
 	fixedToInt (destwidth)
@@ -593,23 +593,23 @@ debugStr(">>>>> IMAGE PROCESSING")
 	
 	
 	fixedInversion (fix, fx)
-	debug ("fix: ", fix)
+	debugF ("fix: ", fix)
 		fiy_from_ps0_fiy()
 	fixedInversion (fiy, fy)
-	debug ("fiy: ", fiy)
+	debugF ("fiy: ", fiy)
 		ps0_from_ps0_fiy()
 
 	li	$a3, 65900
 		fxstep_from_psstep_fxstep()
 	#fixedMult (fxstep, fx, $a3) 		# multiply fx by 0.9999
 	move	fxstep, fx
-	debugF ("===============fxstep: ", fxstep)
+	#debugF ("===============fxstep: ", fxstep)
 		psstep_from_psstep_fxstep()
 
 		fystep_from_pdstep_fystep()
 	#fixedMult (fystep, fy, $a3)
 	move	fystep, fy
-	debugF ("==============fxystep: ", fystep)
+	#debugF ("==============fxystep: ", fystep)
 		pdstep_from_pdstep_fystep()
 
 		pdy_from_sy2_pdy()
@@ -642,10 +642,10 @@ vertical_dest:
 	fixedFromInt ($a3)
 	
 		devY1_from_fx_devY1()
-	fixedSub (devY1, jstart, $a3)
+	fixedAdd (devY1, jstart, $a3)
 		destR_from_destR_jstart()
 
-	fixedAdd (devY1, devY1, sy1)
+	fixedSub (devY1, devY1, sy1)
 		fx_from_fx_devY1()
 	li	$a3, 1
 	fixedFromInt ($a3)
@@ -734,6 +734,8 @@ vertical_source:
 		dy_from_sy1_dy()
 		devY2_from_fy_devY2()
 	fixedSub (dy, dy, devY2)	# if last pixel vert, norm the dy
+	debugF ("// devY2: ", devY2)
+	debugF ("// dy: ", dy)
 		sy1_from_sy1_dy()
 		fy_from_fy_devY2()
 if1:
@@ -743,6 +745,8 @@ if1:
 		fiy_from_ps0_fiy()
 		dyf_from_pd0_dyf()
 	fixedMult (dyf, dy, fiy)
+	debugF ("// fiy: ", fiy)
+	debugF ("// dyf: ", dyf)
 		ps0_from_ps0_fiy()
 		pd0_from_pd0_dyf()
 		sy1_from_sy1_dy()
@@ -789,11 +793,9 @@ if2:
 		AP_from_jj_AP()
 	fixedMult (AP, dx, dyf)		# compute area factor
 	debugF ("// dx: ", dx)
-	debugF ("// dyf: ", dyf)
 		pd0_from_pd0_dyf()
 		sx1_from_sx1_dx()
 	fixedMult (AP, AP, fix)
-	debugF ("// fix: ", fix)
 	debugF ("// AP: ", AP)
 
 		
@@ -867,7 +869,7 @@ if2:
 		pdx_from_x_pdx()
 	#fixedToInt (pdx)	# pdx cannot be fixed - it is too large
 	# store pixel
-	debug("---------======pdx: ", pdx)
+	#debug("---------======pdx: ", pdx)
 	move	$a3, destB
 	fixedToInt ($a3)	# truncate destB
 	sb	$a3, (pdx)

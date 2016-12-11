@@ -50,6 +50,16 @@ str:	.asciiz %str
 	.end_macro
 	
 	##########################################
+	.macro printFixed (%x)
+	sra	$v1, %x, 16
+	printInt ($v1)
+	printStr (".")
+	sll	$v1, %x, 16
+	srl	$v1, $v1, 16
+	printInt ($v1)
+	.end_macro
+	
+	##########################################
 	.macro debugStr (%str)
 	printStr("##### ")
 	printStr(%str)
@@ -61,6 +71,14 @@ str:	.asciiz %str
 	printStr("##### ")
 	printStr(%str)
 	printInt(%x)
+	printStr("\n")
+	.end_macro
+	
+	##########################################
+	.macro debugF (%str, %x)
+	printStr("##### ")
+	printStr(%str)
+	printFixed(%x)
 	printStr("\n")
 	.end_macro
 	
@@ -136,14 +154,14 @@ Loop:	%bodyMacroName ()
 	#printStr("[width]")
 	#li	$v0, 5			# load int
 	#syscall
-	li	$v0, 101
+	li	$v0, 122
 	sw	$v0, OUTWIDTH
 	multBy3($v0)
 	sw	$v0, B_OUTWIDTH
 	printStr("[height]")
 	#li	$v0, 5			# load int
 	#syscall
-	li	$v0, 78
+	li	$v0, 56
 	sw	$v0, OUTHEIGHT		# copy height
 	.end_macro
 	
@@ -538,244 +556,329 @@ debugStr(">>>>> IMAGE PROCESSING")
 	lw	$v0, INROWSIZE
 	lw	$v1, INHEIGHT
 	multu	$v0, $v1
-	mflo	$v0
-	readFromImg (inimg, $v0)
+	mflo	$a3
+	readFromImg (inimg, $a3)
 	lw	destwidth, OUTWIDTH
 	lw	destheight, OUTHEIGHT
-	lw	$v0, INWIDTH
-	lw	$v1, INHEIGHT
+	lw	$a3, INWIDTH
+	lw	$a2, INHEIGHT
 	# convert to fixed point
 	fixedFromInt (destwidth)
 	fixedFromInt (destheight)
-	fixedFromInt ($v0)
-	fixedFromInt ($v1)
+	fixedFromInt ($a3)
+	fixedFromInt ($a2)
 	# compute scalling factors
-	fixedDiv (fx, $v0, destwidth)
-	debug("Scalling factor x: ", fx)
-	fixedDiv (fy, $v1, destheight)
-	debug("Scalling factor y: ", fy)
-	fixedAdd (destwidth, destwidth, -1)
-	fixedAdd (destheight, destheight, -1)
+	fixedDiv (fx, $a3, destwidth)
+	debugF("Scalling factor x: ", fx)
+	fixedDiv (fy, $a2, destheight)
+	debugF("Scalling factor y: ", fy)
+	
+	fixedToInt (destwidth)
+	fixedToInt (destheight)
+	addiu	destwidth, destwidth, -1
+	addiu	destheight, destheight, -1
+	debug ("Destwidth: ", destwidth)
+	debug ("Destheight: ", destheight)
 	la	ps0, inimg
 	lw	psstep, INROWSIZE
+
 	la	pd0, outimg
 	lw	pdstep, OUTROWSIZE
-	#fixedFromInt (ps0)
-	#fixedFromInt (psstep)
-	#fixedFromInt (pd0)
-	#fixedFromInt (pdstep)
+
+	fixedFromInt (destwidth)
+	fixedFromInt (destheight)
 	
-		fiy_from_ps0_fiy()
+	
 	fixedInversion (fix, fx)
+		fiy_from_ps0_fiy()
 	fixedInversion (fiy, fy)
-	li	$v0, 65529
+		ps0_from_ps0_fiy()
+
+	li	$a3, 65529
 		fxstep_from_psstep_fxstep()
+	fixedMult (fxstep, fx, $a3) 		# multiply fx by 0.9999
+		psstep_from_psstep_fxstep()
+
 		fystep_from_pdstep_fystep()
-	fixedMult (fxstep, fx, $v0) 		# multiply fx by 0.9999
-	fixedMult (fystep, fy, $v0)
-	
+	fixedMult (fystep, fy, $a3)
+		pdstep_from_pdstep_fystep()
+
 		pdy_from_sy2_pdy()
-		pd0_from_pd0_dyf()
 	move	pdy, pd0
-	
+		sy2_from_sy2_pdy()
+
 	
 	############################ LOOPS #########################
-		y_from_y_psi()
-	li	y, 0
-	#fixedFromInt (y)
-vertical_dest:
-		sy1_from_sy1_dy()
-	fixedMult (sy1, fy, y)
 	
-		sy2_from_sy2_pdy()
-		sy1_from_sy1_dy()
+	li	y, 0
+	fixedFromInt (y)
+vertical_dest:
+
+	fixedMult (sy1, fy, y)
+	debugF ("sy1: ", sy1)
+	
 		fystep_from_pdstep_fystep()
 	fixedAdd (sy2, sy1, fystep)
+	debugF ("sy2: ", sy2)
+	debug ("fystep: ", fystep)
+		pdstep_from_pdstep_fystep()
+
 		jstart_from_destR_jstart()
 	fixedTrunc (jstart, sy1)
+	
 		jend_from_destG_jend()
 	fixedTrunc (jend, sy2)
-	li	$v0, 1
-	fixedFromInt ($v0)
+	debugF ("-----------------sy2: ", sy2)
+	debugF ("-----------------jend: ", jend)
+	li	$a3, 1
+	fixedFromInt ($a3)
+	
 		devY1_from_fx_devY1()
-	fixedAdd (devY1, jstart, $v0)
-	fixedSub (devY1, devY1, sy1)
-	li	$v0, 1
-	fixedFromInt ($v0)
+	fixedSub (devY1, jstart, $a3)
+		destR_from_destR_jstart()
+
+	fixedAdd (devY1, devY1, sy1)
+		fx_from_fx_devY1()
+	li	$a3, 1
+	fixedFromInt ($a3)
+	
 		devY2_from_fy_devY2()
-	fixedAdd (devY2, jend, $v0)
+	fixedAdd (devY2, jend, $a3)
+		destG_from_destG_jend()
 	fixedSub (devY2, devY2, sy2)
+		fy_from_fy_devY2()
+	
 		pdx_from_x_pdx()
 		pdy_from_sy2_pdy()
 	move	pdx, pdy
-
+		sy2_from_sy2_pdy()
 		x_from_x_pdx()
+
 	li	x, 0
-	#fixedFromInt (x)
+	fixedFromInt (x)
 horizontal_dest:
-		sx1_from_sx1_dx()
-		fx_from_fx_devY1()
+
 	fixedMult (sx1, fx, x)
 		fxstep_from_psstep_fxstep()
 	fixedAdd (sx2, sx1, fxstep)
-	
+		psstep_from_psstep_fxstep()
+
 		istart_from_destwidth_istart()
+	fixedTrunc (istart, sx1)		# truncate
+	
 		iend_from_destheight_iend()
-	#fixedTrunc (istart, sx1)
-	move	istart, sx1
-	fixedToInt (istart)
-	#fixedTrunc (iend, sx2)
-	move	iend, sx2
-	fixedToInt (iend)
-	li	$v0, 1
-	fixedFromInt ($v0)
+	fixedTrunc (iend, sx2)
+	li	$a3, 1
+	fixedFromInt ($a3)
+		
 		devX1_from_destB_devX1()
-	fixedFromInt (istart)
-	fixedAdd (devX1, istart, $v0)
-	fixedToInt (istart)
+	fixedAdd (devX1, istart, $a3)
+		destwidth_from_destwidth_istart()
 	fixedSub (devX1, devX1, sx1)
-	li	$v0, 1
-	fixedFromInt ($v0)
-		devX2_from_sBGR_devX2()
-	fixedAdd (devX2, iend, $v0)
-	fixedSub (devX2, devX2, sx2)
-		destR_from_destR_jstart()
-		destG_from_destG_jend()
 		destB_from_destB_devX1()
+
+	li	$a3, 1
+	fixedFromInt ($a3)
+
+
+		devX2_from_sBGR_devX2()
+	fixedAdd (devX2, iend, $a3)
+	
+		destheight_from_destheight_iend()
+	fixedSub (devX2, devX2, sx2)
+		sBGR_from_sBGR_devX2()
+
+	
 	li	destR, 0		# prepare colors acumulators
 	li	destG, 0
 	li	destB, 0
+	
 		psj_from_i_psj()
 		jstart_from_destR_jstart()
-		psstep_from_psstep_fxstep()
 	#fixedMult (psj, jstart, psstep)
+	fixedToInt (jstart)
 	multu	jstart, psstep
 	mflo	psj
-		ps0_from_ps0_fiy()
-	#fixedSub (psj, ps0, psj)
-	subu	psj, ps0, psj
-		dy_from_sy1_dy()
-		devY1_from_fx_devY1()
-	move	dy, devY1
+	fixedFromInt (jstart)
 	
-		jj_from_jj_AP()
-		jstart_from_destR_jstart()
+	#fixedSub (psj, ps0, psj)
+	addu	psj, ps0, psj
+		i_from_i_psj()
+	
+		devY1_from_fx_devY1()
+		dy_from_sy1_dy()
+	move	dy, devY1
+		sy1_from_sy1_dy()
+		fx_from_fx_devY1()
+	
 	move	jj, jstart
+		destR_from_destR_jstart()
 vertical_source:
 		jend_from_destG_jend()
+	bne	jj, jend, if1
 		dy_from_sy1_dy()
 		devY2_from_fy_devY2()
-	bne	jj, jend, if1
 	fixedSub (dy, dy, devY2)	# if last pixel vert, norm the dy
+		sy1_from_sy1_dy()
+		fy_from_fy_devY2()
 if1:
-		dyf_from_pd0_dyf()
+		destG_from_destG_jend()
+
+		dy_from_sy1_dy()
 		fiy_from_ps0_fiy()
+		dyf_from_pd0_dyf()
 	fixedMult (dyf, dy, fiy)
-	li	$v0, 3
+		ps0_from_ps0_fiy()
+		pd0_from_pd0_dyf()
+		sy1_from_sy1_dy()
+
+	li	$a3, 3
 	#fixedFromInt ($v0)
-		#psi_from_y_psi()
+	
+		psi_from_y_psi()
 		istart_from_destwidth_istart()
-	#fixedMult (psi, istart, $v0)
-	multu	istart, $v0
+	fixedToInt (istart)
+	multu	istart, $a3
+	fixedFromInt (istart)
 	mflo	psi
-	################################	
+		psj_from_i_psj()	
 	#fixedAdd (psi, psi, psj)
 	addu	psi, psi, psj
+		y_from_y_psi()
+		i_from_i_psj()
+
+	
 		dx_from_sx1_dx()
 		devX1_from_destB_devX1()
 	move	dx, devX1
+		destB_from_destB_devX1()
+		sx1_from_sx1_dx()
 
-		i_from_i_psj()
 	move	i, istart
+		destwidth_from_destwidth_istart()
 horizontal_source:
 		iend_from_destheight_iend()
-		dx_from_sx1_dx()
-		devY2_from_fy_devY2()
 	bne	i, iend, if2
+		dx_from_sx1_dx()
+
+		devX2_from_sBGR_devX2()
 	fixedSub (dx, dx, devX2)
+		sBGR_from_sBGR_devX2()
+		sx1_from_sx1_dx()
 if2:
-		AP_from_jj_AP()
+		destheight_from_destheight_iend()
+
 		dyf_from_pd0_dyf()
+		dx_from_sx1_dx()
+		AP_from_jj_AP()
 	fixedMult (AP, dx, dyf)		# compute area factor
+		pd0_from_pd0_dyf()
+		sx1_from_sx1_dx()
 	fixedMult (AP, AP, fix)
-		#psi_from_y_psi()
-	#fixedToInt (psi)		# switch pointer to int from fixed
+
+
+		
+		psi_from_y_psi()
 	
-	debug("Load adress: ", psi)
-	lbu	$v0, (psi)		# load Blue
-	fixedFromInt ($v0)
-	fixedMult ($v0, $v0, AP)
-		destB_from_destB_devX1()
-	fixedAdd (destB, destB, $v0)
+	#debug("Load adress: ", psi)
+	lbu	$a3, (psi)		# load Blue
+	fixedFromInt ($a3)
+	fixedMult ($a3, $a3, AP)
 	
-	lbu	$v0, 1(psi)		# load Green
-	fixedFromInt ($v0)
-	fixedMult ($v0, $v0, AP)
-		destG_from_destG_jend()
-	fixedAdd (destG, destG, $v0)
+	fixedAdd (destB, destB, $a3)
 	
-	lbu	$v0, 2(psi)		# load Red
-	fixedFromInt ($v0)
-	fixedMult ($v0, $v0, AP)
-		destR_from_destR_jstart()
-	fixedAdd (destR, destR, $v0)
+	lbu	$a3, 1(psi)		# load Green
+	fixedFromInt ($a3)
+	fixedMult ($a3, $a3, AP)
+	
+	fixedAdd (destG, destG, $a3)
+	
+	lbu	$a3, 2(psi)		# load Red
+	fixedFromInt ($a3)
+	fixedMult ($a3, $a3, AP)
+		jj_from_jj_AP()
+	
+	fixedAdd (destR, destR, $a3)
 	
 	addiu	psi, psi, 3
-	#fixedFromInt (psi)
+		y_from_y_psi()
 	
-	li	$v0, 1
-	fixedFromInt ($v0)
+	li	$a3, 1
+	fixedFromInt ($a3)
+	
 		dx_from_sx1_dx()
-	move	dx, $v0
+	move	dx, $a3
+		sx1_from_sx1_dx()
 		
-		i_from_i_psj()
 		iend_from_destheight_iend()
-	ble	i, iend, horizontal_source
+	move	$a3, iend
+		destheight_from_destheight_iend()
+		
+	fixedAdd (i, i, 65536)
+	debugF ("         i: ", i)
+	debugF ("         iend: ", iend)
+	ble	i, $a3, horizontal_source
 
-# vertical source
-		psstep_from_psstep_fxstep()
+# vertical source ###########################################
 		psj_from_i_psj()
 	#fixedSub (psj, psj, psstep)
-	subu	psj, psj, psstep
-	li	$v0, 1
-	fixedFromInt ($v0)
-		dy_from_sy1_dy()
-	move	dy, $v0			# set dy factor as default for 1 
-		jj_from_jj_AP()
-		jend_from_destG_jend()
-	ble	jj, jend, vertical_source
+	addu	psj, psj, psstep
+		i_from_i_psj()
 
-# horizontal dest
+	li	$a3, 1
+	fixedFromInt ($a3)
+		dy_from_sy1_dy()
+	move	dy, $a3			# set dy factor as default for 1 
+		sy1_from_sy1_dy()
+
+		jend_from_destG_jend()
+	move 	$a3, jend
+		destG_from_destG_jend()
+		
+		fixedAdd (jj, jj, 65536)
+	debugF("      jj: ", jj)
+	debugF("      jend: ", $a3)
+	ble	jj, $a3, vertical_source
+
+# horizontal dest ###########################################
 		pdx_from_x_pdx()
 	#fixedToInt (pdx)	# pdx cannot be fixed - it is too large
 	# store pixel
-		destB_from_destB_devX1()
-	move	$v0, destB
-	fixedToInt ($v0)
-	sb	$v0, (pdx)
-		destG_from_destG_jend()
-	move	$v0, destG
-	fixedToInt ($v0)
-	sb	$v0, 1(pdx)
-		destR_from_destR_jstart()
-	move	$v0, destR
-	fixedToInt ($v0)
-	sb	$v0, 2(pdx)
+	debug("pdx: ", pdx)
+	move	$a3, destB
+	fixedToInt ($a3)	# truncate destB
+	sb	$a3, (pdx)
+	#debug("Blue: ", $v0)
+	
+	move	$a3, destG
+	fixedToInt ($a3)
+	sb	$a3, 1(pdx)
+	#debug("Green: ", $v0)
+	
+	
+	move	$a3, destR
+	fixedToInt ($a3)
+	sb	$a3, 2(pdx)
+	#debug("Red: ", $v0)
+	
 
-		destwidth_from_destwidth_istart()
 	addiu	pdx, pdx, 3
-	#fixedFromInt (pdx)
 		x_from_x_pdx()
+	
+	fixedAdd (x, x, 65536)
+	debugF ("   x: ", x)
+	debugF ("   destwidth: ", destwidth)
 	ble	x, destwidth, horizontal_dest
 	
-# vertical dest
+# vertical dest ###########################################
 		pdy_from_sy2_pdy()
-		pdstep_from_pdstep_fystep()
-	
 	#fixedAdd (pdy, pdy, pdstep)
-	add	pdy, pdy, pdstep
-		y_from_y_psi()
-		destheight_from_destheight_iend()
+	addu	pdy, pdy, pdstep
+		sy2_from_sy2_pdy()
+
+	fixedAdd (y, y, 65536)
+	debugF ("y: ", y)
+	debugF ("destheight: ", destheight)
 	ble	y, destheight, vertical_dest
 
 debugStr("<<<<< IMAGE PROCESSING")

@@ -3,6 +3,11 @@
 		
 ########################################## DATA ##############################################################
 		.data
+		.align	2
+outimg:		.space 	2		# for header shift
+outheader:	.space 	BUFFER_SIZE	# 1,6 MB for output
+
+		.align	2
 inimg:		.space 	2		# for buffer shift
 inheader:	.space 	BUFFER_SIZE	# 1,6 MB for input
 
@@ -19,10 +24,7 @@ OUTHEIGHT:	.space 	4		# output img height (no of rows)
 OUTROWSIZE:	.space 	4		# output img row size (with padding)
 fin:		.asciiz	"image3.bmp"
 fout:		.asciiz	"image_scaled.bmp"
-		.align	2
-outimg:		.space 	2		# for header shift
-outheader:	.space 	BUFFER_SIZE	# 1,6 MB for output
-
+		.align 2
         .text
 ########################################## MACROS ##############################################################
 
@@ -76,10 +78,10 @@ str:	.asciiz %str
 	
 	##########################################
 	.macro debugF (%str, %x)
-	printStr("##### ")
-	printStr(%str)
-	printFixed(%x)
-	printStr("\n")
+	#printStr("##### ")
+	#printStr(%str)
+	#printFixed(%x)
+	#printStr("\n")
 	.end_macro
 	
 	##########################################
@@ -145,7 +147,7 @@ Loop:	%bodyMacroName ()
         li	$v0, 15			# write to file
   	lw	$a0, out_file_desc	# file descriptor
   	la	$a1, %source		# source	
-  	li	$a2, %size		# max file size
+  	addu	$a2, $zero, %size	# max file size
   	syscall
 	.end_macro
 	
@@ -154,14 +156,14 @@ Loop:	%bodyMacroName ()
 	#printStr("[width]")
 	#li	$v0, 5			# load int
 	#syscall
-	li	$v0, 122
+	li	$v0, 128
 	sw	$v0, OUTWIDTH
 	multBy3($v0)
 	sw	$v0, B_OUTWIDTH
 	printStr("[height]")
 	#li	$v0, 5			# load int
 	#syscall
-	li	$v0, 56
+	li	$v0, 128
 	sw	$v0, OUTHEIGHT		# copy height
 	.end_macro
 	
@@ -780,7 +782,7 @@ if2:
 		
 		psi_from_y_psi()
 	
-	#debug("Load adress: ", psi)
+	debug("Load adress: ", psi)
 	lbu	$a3, (psi)		# load Blue
 	fixedFromInt ($a3)
 	fixedMult ($a3, $a3, AP)
@@ -844,7 +846,7 @@ if2:
 		pdx_from_x_pdx()
 	#fixedToInt (pdx)	# pdx cannot be fixed - it is too large
 	# store pixel
-	debug("pdx: ", pdx)
+	debug("Store address: ", pdx)
 	move	$a3, destB
 	fixedToInt ($a3)	# truncate destB
 	sb	$a3, (pdx)
@@ -886,6 +888,11 @@ debugStr("")
 
 ##################### EPILOGUE #####################
 epilogue:
+	lw	$a3, OUTROWSIZE
+	lw	$a2, OUTHEIGHT
+	multu	$a3, $a2
+	mflo	$a3
+	storeToImg (outimg, $a3)
 	closeInputImg()
 	closeOutputImg()
 	exit()

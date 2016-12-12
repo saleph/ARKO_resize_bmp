@@ -4,8 +4,9 @@
 ########################################## DATA ##############################################################
 		.data
 		.align	2
-outimg:		.space 	2		# for header shift
-outheader:	.space 	BUFFER_SIZE	# 1,6 MB for output
+		.space 	2
+outheader:	.space 	54		# for header shift
+outimg:		.space 	BUFFER_SIZE	# 1,6 MB for output
 
 		.align	2
 inimg:		.space 	2		# for buffer shift
@@ -63,14 +64,14 @@ str:	.asciiz %str
 	
 	##########################################
 	.macro debugStr (%str)
-	printStr("##### ")
+	#printStr("##### ")
 	printStr(%str)
 	printStr("\n")
 	.end_macro
 	
 	##########################################
 	.macro debug (%str, %x)
-	printStr("##### ")
+	#printStr("##### ")
 	printStr(%str)
 	printInt(%x)
 	printStr("\n")
@@ -156,14 +157,14 @@ Loop:	%bodyMacroName ()
 	#printStr("[width]")
 	#li	$v0, 5			# load int
 	#syscall
-	li	$v0, 30
+	li	$v0, 125
 	sw	$v0, OUTWIDTH
 	multBy3($v0)
 	sw	$v0, B_OUTWIDTH
 	printStr("[height]")
 	#li	$v0, 5			# load int
 	#syscall
-	li	$v0, 30
+	li	$v0, 22
 	sw	$v0, OUTHEIGHT		# copy height
 	.end_macro
 	
@@ -624,13 +625,13 @@ debugStr(">>>>> IMAGE PROCESSING")
 	li	y, 0
 	fixedFromInt (y)
 vertical_dest:
-
+	#debugF ("y: ", y)
 	fixedMult (sy1, fy, y)
-	debugF ("   sy1: ", sy1)
+	#debugF ("   sy1: ", sy1)
 	
 		fystep_from_pdstep_fystep()
 	fixedAdd (sy2, sy1, fystep)
-	debugF ("   sy2: ", sy2)
+	#debugF ("   sy2: ", sy2)
 		pdstep_from_pdstep_fystep()
 
 		jstart_from_destR_jstart()
@@ -666,7 +667,7 @@ vertical_dest:
 	li	x, 0
 	fixedFromInt (x)
 horizontal_dest:
-
+	#debugF ("	x: ", x)
 	fixedMult (sx1, fx, x)
 	#debugF ("sx1: ", sx1)
 		fxstep_from_psstep_fxstep()
@@ -732,13 +733,14 @@ horizontal_dest:
 	#debugF("jstart: ", jstart)
 		destR_from_destR_jstart()
 vertical_source:
+	#debugF ("		jj: ", jj)
 		jend_from_destG_jend()
 	bne	jj, jend, if1
 		dy_from_sy1_dy()
 		devY2_from_fy_devY2()
 	fixedSub (dy, dy, devY2)	# if last pixel vert, norm the dy
-	debugF ("// devY2: ", devY2)
-	debugF ("// dy: ", dy)
+	#debugF ("// devY2: ", devY2)
+	#debugF ("// dy: ", dy)
 		sy1_from_sy1_dy()
 		fy_from_fy_devY2()
 if1:
@@ -748,8 +750,8 @@ if1:
 		fiy_from_ps0_fiy()
 		dyf_from_pd0_dyf()
 	fixedMult (dyf, dy, fiy)
-	debugF ("// fiy: ", fiy)
-	debugF ("// dyf: ", dyf)
+	#debugF ("// fiy: ", fiy)
+	#debugF ("// dyf: ", dyf)
 		ps0_from_ps0_fiy()
 		pd0_from_pd0_dyf()
 		sy1_from_sy1_dy()
@@ -780,6 +782,7 @@ if1:
 	move	i, istart
 		destwidth_from_destwidth_istart()
 horizontal_source:
+	#debugF ("			i: ", i)
 		iend_from_destheight_iend()
 	bne	i, iend, if2
 		dx_from_sx1_dx()
@@ -795,11 +798,11 @@ if2:
 		dx_from_sx1_dx()
 		AP_from_jj_AP()
 	fixedMult (AP, dx, dyf)		# compute area factor
-	debugF ("// dx: ", dx)
+	#debugF ("// dx: ", dx)
 		pd0_from_pd0_dyf()
 		sx1_from_sx1_dx()
 	fixedMult (AP, AP, fix)
-	debugF ("// AP: ", AP)
+	#debugF ("// AP: ", AP)
 
 		
 		psi_from_y_psi()
@@ -807,21 +810,21 @@ if2:
 	#debug ("----------========psi: ", psi)
 	#debug("Load adress: ", psi)
 	lbu	$a3, (psi)		# load Blue
-	debug("blue: ", $a3)
+	#debug("blue: ", $a3)
 	fixedFromInt ($a3)
 	fixedMult ($a3, $a3, AP)
 	
 	fixedAdd (destB, destB, $a3)
 	
 	lbu	$a3, 1(psi)		# load Green
-	debug("green: ", $a3)
+	#debug("green: ", $a3)
 	fixedFromInt ($a3)
 	fixedMult ($a3, $a3, AP)
 	
 	fixedAdd (destG, destG, $a3)
 	
 	lbu	$a3, 2(psi)		# load Red
-	debug("red: ", $a3)
+	#debug("red: ", $a3)
 	fixedFromInt ($a3)
 	fixedMult ($a3, $a3, AP)
 		jj_from_jj_AP()
@@ -843,14 +846,15 @@ if2:
 		destheight_from_destheight_iend()
 		
 	fixedAdd (i, i, 65536)
-	#debugF ("         i: ", i)
-	#debugF ("         iend: ", iend)
+	#debugF ("			i_cond: ", i)
+	#debugF ("			iend: ", $a3)
 	ble	i, $a3, horizontal_source
 
 # vertical source ###########################################
 		psj_from_i_psj()
 	#fixedSub (psj, psj, psstep)
 	addu	psj, psj, psstep
+	#debug ("	psj: ", psj)
 		i_from_i_psj()
 
 	li	$a3, 1
@@ -863,9 +867,9 @@ if2:
 	move 	$a3, jend
 		destG_from_destG_jend()
 		
-		fixedAdd (jj, jj, 65536)
-	#debugF("      jj: ", jj)
-	#debugF("      jend: ", $a3)
+	fixedAdd (jj, jj, 65536)
+	#debugF("		jj_loop: ", jj)
+	#debugF("		jend: ", $a3)
 	ble	jj, $a3, vertical_source
 
 # horizontal dest ###########################################
@@ -877,23 +881,24 @@ if2:
 	#debugF ("destB before store: ", destB)
 	fixedToInt ($a3)	# truncate destB
 	sb	$a3, (pdx)
-	debug("stored Blue: ", $a3)
+	#debug("stored Blue: ", $a3)
 	
 	move	$a3, destG
 	#debugF ("destG before store: ", destG)
 	fixedToInt ($a3)
 	sb	$a3, 1(pdx)
-	debug("stored Green: ", $a3)
+	#debug("stored Green: ", $a3)
 	
 	
 	move	$a3, destR
 	#debugF ("destR before store: ", destR)
 	fixedToInt ($a3)
 	sb	$a3, 2(pdx)
-	debug("stored Red: ", $a3)
+	#debug("stored Red: ", $a3)
 	
 
 	addiu	pdx, pdx, 3
+	debug ("pdx: ", pdx)
 		x_from_x_pdx()
 	
 	fixedAdd (x, x, 65536)
@@ -905,7 +910,8 @@ if2:
 		pdy_from_sy2_pdy()
 	#fixedAdd (pdy, pdy, pdstep)
 	addu	pdy, pdy, pdstep
-	debug("---------pdy: ", pdy)
+	debug ("	pdy: ", pdy)
+	#debug("---------pdy: ", pdy)
 		sy2_from_sy2_pdy()
 
 	fixedAdd (y, y, 65536)

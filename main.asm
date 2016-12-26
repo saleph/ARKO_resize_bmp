@@ -23,7 +23,7 @@ INROWSIZE:	.space 	4		# input img row size (with padding)
 B_OUTWIDTH:	.space 	4		# output img width in bytes
 OUTHEIGHT:	.space 	4		# output img height (no of rows)
 OUTROWSIZE:	.space 	4		# output img row size (with padding)
-fin:		.asciiz	"image3.bmp"
+fin:		.asciiz	"im3.bmp"
 fout:		.asciiz	"image_scaled.bmp"
 		.align 2
         .text
@@ -42,14 +42,14 @@ str:	.asciiz %str
 	.text
 	li $v0, 4
 	la $a0, str
-	syscall
+	#syscall
 	.end_macro
 	
 	##########################################
 	.macro printInt (%x)
 	li $v0, 1
 	add $a0, $zero, %x
-	syscall
+	#syscall
 	.end_macro
 	
 	##########################################
@@ -64,14 +64,14 @@ str:	.asciiz %str
 	
 	##########################################
 	.macro debugStr (%str)
-	#printStr("##### ")
+	printStr("##### ")
 	printStr(%str)
 	printStr("\n")
 	.end_macro
 	
 	##########################################
 	.macro debug (%str, %x)
-	#printStr("##### ")
+	printStr("##### ")
 	printStr(%str)
 	printInt(%x)
 	printStr("\n")
@@ -157,14 +157,18 @@ Loop:	%bodyMacroName ()
 	#printStr("[width]")
 	#li	$v0, 5			# load int
 	#syscall
-	li	$v0, 125
+	li	$v0, 32
 	sw	$v0, OUTWIDTH
-	multBy3($v0)
+	
+	#multBy3($v0)
+	li	$v1, 3
+	multu	$v0, $v1
+	mflo	$v0
 	sw	$v0, B_OUTWIDTH
 	printStr("[height]")
 	#li	$v0, 5			# load int
 	#syscall
-	li	$v0, 22
+	li	$v0, 64
 	sw	$v0, OUTHEIGHT		# copy height
 	.end_macro
 	
@@ -232,21 +236,30 @@ Loop:	%bodyMacroName ()
 	.macro computeInputRowSize()
 	# rowSize = [(WIDTH_IN_BITS + 31) / 32]*4
 	lw	$v0, B_INWIDTH
-	sll	$v0, $v0, 3	# *8
-	addiu	$v0, $v0, 31
-	sra	$v0, $v0, 5	# /32
-	sll	$v0, $v0, 2	# *4
+	#sll	$v0, $v0, 3	# *8
+	#addiu	$v0, $v0, 31
+	#sra	$v0, $v0, 5	# /32
+	#sll	$v0, $v0, 2	# *4
+	
+	addiu	$v0, $v0, -1
+	andi	$v0, $v0, 0xfffffffc
+	addiu	$v0, $v0, 4
 	sw	$v0, INROWSIZE
 	.end_macro
 	
 	##########################################
 	.macro computeOutputRowSize()
 	# rowSize = [(WIDTH_IN_BITS + 31) / 32]*4
-	lw	$v0, B_OUTWIDTH
-	sll	$v0, $v0, 3	# *8
-	addiu	$v0, $v0, 31
-	sra	$v0, $v0, 5	# /32
-	sll	$v0, $v0, 2	# *4
+	lw	$k0, B_OUTWIDTH
+	debug ("row size comp /////////////////////////: ", $k0)
+	move	$v0, $k0
+	#sll	$v0, $v0, 3	# *8
+	#addiu	$v0, $v0, 31
+	#sra	$v0, $v0, 5	# /32
+	#sll	$v0, $v0, 2	# *4
+	addiu	$v0, $v0, -1
+	andi	$v0, $v0, 0xfffffffc
+	addiu	$v0, $v0, 4
 	sw	$v0, OUTROWSIZE
 	.end_macro
 ########################################## MAIN PROGRAM ##############################################################
@@ -315,6 +328,8 @@ debugStr(">> OUTPUT HEADER PREPARATION")
 	multu	$t0, $t1
 	mflo	$t0
 	debug("New writed color table size: ", $t0)
+	lw	$t0, OUTROWSIZE
+	debug("###################### rowsize: ", $t0)
 	sw	$t0, outheader + 0x22
 	
 	addiu	$t0, $t0, 54			# add header length
@@ -561,7 +576,7 @@ debugStr(">>>>> IMAGE PROCESSING")
 	multu	$v0, $a3
 	mflo	$a3
 	readFromImg (inimg, $a3)
-	storeToImg (inimg, $a3)
+	#storeToImg (inimg, $a3)
 	
 	lw	destwidth, OUTWIDTH
 	lw	destheight, OUTHEIGHT
@@ -584,10 +599,10 @@ debugStr(">>>>> IMAGE PROCESSING")
 	addiu	destheight, destheight, -1
 	debug ("Destwidth: ", destwidth)
 	debug ("Destheight: ", destheight)
-	la	ps0, inimg
+	la	ps0, inimg + 54
 	lw	psstep, INROWSIZE
 
-	la	pd0, outimg
+	la	pd0, outimg + 54
 	lw	pdstep, OUTROWSIZE
 
 	fixedFromInt (destwidth)
@@ -603,20 +618,20 @@ debugStr(">>>>> IMAGE PROCESSING")
 
 	li	$a3, 65529
 		fxstep_from_psstep_fxstep()
-	fixedMult (fxstep, fx, $a3) 		# multiply fx by 0.9999
-	#move	fxstep, fx
+	#fixedMult (fxstep, fx, $a3) 		# multiply fx by 0.9999
+	move	fxstep, fx
 	#debugF ("===============fxstep: ", fxstep)
 		psstep_from_psstep_fxstep()
 
 		fystep_from_pdstep_fystep()
-	fixedMult (fystep, fy, $a3)
-	#move	fystep, fy
+	#fixedMult (fystep, fy, $a3)
+	move	fystep, fy
 	#debugF ("==============fxystep: ", fystep)
 		pdstep_from_pdstep_fystep()
 
 		pdy_from_sy2_pdy()
 	move	pdy, pd0
-	debug ("pdy: ", pdy)
+	#debug ("pdy: ", pdy)
 		sy2_from_sy2_pdy()
 
 	
@@ -627,11 +642,11 @@ debugStr(">>>>> IMAGE PROCESSING")
 vertical_dest:
 	#debugF ("y: ", y)
 	fixedMult (sy1, fy, y)
-	#debugF ("   sy1: ", sy1)
+	debugF ("   sy1: ", sy1)
 	
 		fystep_from_pdstep_fystep()
 	fixedAdd (sy2, sy1, fystep)
-	#debugF ("   sy2: ", sy2)
+	debugF ("   sy2: ", sy2)
 		pdstep_from_pdstep_fystep()
 
 		jstart_from_destR_jstart()
@@ -669,10 +684,10 @@ vertical_dest:
 horizontal_dest:
 	#debugF ("	x: ", x)
 	fixedMult (sx1, fx, x)
-	#debugF ("sx1: ", sx1)
+	debugF ("sx1: ", sx1)
 		fxstep_from_psstep_fxstep()
 	fixedAdd (sx2, sx1, fxstep)
-	#debugF ("sx2: ", sx2)
+	debugF ("sx2: ", sx2)
 		psstep_from_psstep_fxstep()
 
 		istart_from_destwidth_istart()
@@ -898,11 +913,12 @@ if2:
 	
 
 	addiu	pdx, pdx, 3
-	debug ("pdx: ", pdx)
+	#debug ("pdx: ", pdx)
 		x_from_x_pdx()
 	
 	fixedAdd (x, x, 65536)
-	#debugF ("   x: ", x)
+	debugF ("	x: ", x)
+	debugF ("	y: ", y)
 	#debugF ("   destwidth: ", destwidth)
 	ble	x, destwidth, horizontal_dest
 	
@@ -910,7 +926,7 @@ if2:
 		pdy_from_sy2_pdy()
 	#fixedAdd (pdy, pdy, pdstep)
 	addu	pdy, pdy, pdstep
-	debug ("	pdy: ", pdy)
+	#debug ("	pdy: ", pdy)
 	#debug("---------pdy: ", pdy)
 		sy2_from_sy2_pdy()
 
